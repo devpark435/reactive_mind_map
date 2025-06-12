@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reactive_mind_map/reactive_mind_map.dart';
+import 'package:reactive_mind_map/src/controllers/mind_map_controller.dart';
 
 void main() {
   group('MindMapWidget Tests', () {
@@ -31,7 +32,11 @@ void main() {
       );
 
       await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: MindMapWidget(data: testData))),
+        MaterialApp(
+          home: Scaffold(
+            body: MindMapWidget(controller: MindMapController(testData)),
+          ),
+        ),
       );
 
       // 루트 노드가 렌더링되는지 확인
@@ -55,9 +60,12 @@ void main() {
       );
 
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           home: Scaffold(
-            body: MindMapWidget(data: testData, style: customStyle),
+            body: MindMapWidget(
+              controller: MindMapController(testData),
+              style: customStyle,
+            ),
           ),
         ),
       );
@@ -74,12 +82,13 @@ void main() {
       );
 
       bool callbackCalled = false;
+      final controller = MindMapController(testData);
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: MindMapWidget(
-              data: testData,
+              controller: controller,
               canvasSize: const Size(800, 600),
               onNodeTap: (node) {
                 callbackCalled = true;

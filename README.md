@@ -13,7 +13,7 @@ Flutter용 다중 레이아웃, 동적 크기 조절, 다양한 스타일링 옵
   <img src="https://raw.githubusercontent.com/devpark435/reactive_mind_map/main/screenshots/mindmap_demo.png" alt="Reactive Mind Map Demo" width="800"/>
 </p>
 
-*Multiple layouts and customization options / 다양한 레이아웃과 커스터마이징 옵션*
+_Multiple layouts and customization options / 다양한 레이아웃과 커스터마이징 옵션_
 
 ## Demo / 데모
 
@@ -21,27 +21,31 @@ Flutter용 다중 레이아웃, 동적 크기 조절, 다양한 스타일링 옵
   <img src="https://raw.githubusercontent.com/devpark435/reactive_mind_map/main/screenshots/mindmap_animation.gif" alt="Interactive Mind Map Animation" width="600"/>
 </p>
 
-*Interactive expand/collapse and smooth animations / 인터랙티브 확장/축소 및 부드러운 애니메이션*
+_Interactive expand/collapse and smooth animations / 인터랙티브 확장/축소 및 부드러운 애니메이션_
 
 ## Features / 특징
 
 🎨 **완전한 커스터마이징 / Complete Customization**
+
 - 노드 모양 선택 (둥근 사각형, 원형, 다이아몬드, 육각형 등) / Node shapes (rounded rectangle, circle, diamond, hexagon, etc.)
 - 색상, 텍스트 스타일, 그림자 효과 커스터마이징 / Colors, text styles, shadow effects customization
 - 동적 노드 크기 조절 / Dynamic node sizing
 - 연결선 스타일과 애니메이션 설정 / Connection line styles and animation settings
 
 🎯 **다양한 레이아웃 / Multiple Layouts**
+
 - 오른쪽/왼쪽/위/아래 방향 레이아웃 / Right/Left/Top/Bottom direction layouts
 - 원형(Radial) 레이아웃 / Radial layout
 - 좌우/상하 분할 레이아웃 / Horizontal/Vertical split layouts
 
 ⚡ **부드러운 애니메이션 / Smooth Animations**
+
 - 노드 확장/축소 애니메이션 / Node expand/collapse animations
 - 커스터마이징 가능한 애니메이션 곡선과 지속시간 / Customizable animation curves and duration
 - 하드웨어 가속 트랜지션 / Hardware-accelerated transitions
 
 🖱️ **풍부한 인터랙션 / Rich Interactions**
+
 - 탭, 길게 누르기, 더블 탭 이벤트 / Tap, long press, double tap events
 - 확대/축소, 팬 기능 / Pan & zoom functionality
 - 노드 확장/축소 상태 추적 / Node expand/collapse state tracking
@@ -64,27 +68,29 @@ flutter pub get
 
 ## Quick Start / 빠른 시작
 
+### With MindMapController (add / edit / delete)
+
 ```dart
 import 'package:flutter/material.dart';
 import 'package:reactive_mind_map/reactive_mind_map.dart';
 
 class MyMindMap extends StatelessWidget {
+  final MindMapController controller = MindMapController(const MindMapData(
+    id: 'root',
+    title: 'My Project',
+    children: [
+      MindMapData(id: '1', title: 'Planning'),
+      MindMapData(id: '2', title: 'Development'),
+      MindMapData(id: '3', title: 'Testing'),
+    ],
+  ));
+
   @override
   Widget build(BuildContext context) {
-    final mindMapData = MindMapData(
-      id: 'root',
-      title: 'My Project',
-      children: [
-        MindMapData(id: '1', title: 'Planning'),
-        MindMapData(id: '2', title: 'Development'),
-        MindMapData(id: '3', title: 'Testing'),
-      ],
-    );
-
     return Scaffold(
       body: MindMapWidget(
-        data: mindMapData,
-        style: MindMapStyle(
+        controller: controller,
+        style: const MindMapStyle(
           layout: MindMapLayout.right,
           nodeShape: NodeShape.roundedRectangle,
         ),
@@ -95,9 +101,12 @@ class MyMindMap extends StatelessWidget {
 }
 ```
 
+> If you only need a _read-only_ map, you can still pass `data:` instead of `controller:` – nothing changes.
+
 ## 중요 사용법 주의사항 / Important Usage Notes
 
 ⚠️ **화면 크기 최적화** / Screen Size Optimization
+
 - `MindMapWidget`은 기본적으로 화면 크기에 맞게 자동 조정됩니다
 - `Expanded` 위젯 안에서 사용할 때는 추가 설정이 필요하지 않습니다
 - 팬/줌 기능이 기본으로 활성화되어 있어 큰 마인드맵도 쉽게 탐색할 수 있습니다
@@ -107,7 +116,7 @@ class MyMindMap extends StatelessWidget {
 Widget build(BuildContext context) {
   return Scaffold(
     body: MindMapWidget(
-      data: root.value,
+      controller: MindMapController(root.value),
       style: MindMapStyle(
         layout: MindMapLayout.right,
         nodeShape: NodeShape.roundedRectangle,
@@ -125,7 +134,7 @@ Widget build(BuildContext context) {
         SomeHeaderWidget(),
         Expanded(
           child: MindMapWidget(
-            data: root.value,
+            controller: MindMapController(root.value),
             style: MindMapStyle(
               layout: MindMapLayout.right,
               nodeShape: NodeShape.roundedRectangle,
@@ -158,10 +167,10 @@ final customStyle = MindMapStyle(
 
 ```dart
 MindMapWidget(
-  data: myData,
+  controller: MindMapController(myData),
   onNodeTap: (node) => print('Node tapped: ${node.title}'),
   onNodeLongPress: (node) => _showNodeOptions(node),
-  onNodeExpandChanged: (node, isExpanded) => 
+  onNodeExpandChanged: (node, isExpanded) =>
     print('${node.title} ${isExpanded ? 'expanded' : 'collapsed'}'),
 );
 ```
@@ -170,26 +179,26 @@ MindMapWidget(
 
 ### Layouts / 레이아웃
 
-| Layout / 레이아웃 | Description / 설명 |
-|-------------------|-------------------|
-| `MindMapLayout.right` | Traditional right-expanding / 오른쪽 확장 |
-| `MindMapLayout.left` | Left-expanding / 왼쪽 확장 |
-| `MindMapLayout.top` | Upward-expanding / 위쪽 확장 |
-| `MindMapLayout.bottom` | Downward-expanding / 아래쪽 확장 |
-| `MindMapLayout.radial` | Circular arrangement / 원형 배치 |
-| `MindMapLayout.horizontal` | Left-right split / 좌우 분할 |
-| `MindMapLayout.vertical` | Top-bottom split / 상하 분할 |
+| Layout / 레이아웃          | Description / 설명                        |
+| -------------------------- | ----------------------------------------- |
+| `MindMapLayout.right`      | Traditional right-expanding / 오른쪽 확장 |
+| `MindMapLayout.left`       | Left-expanding / 왼쪽 확장                |
+| `MindMapLayout.top`        | Upward-expanding / 위쪽 확장              |
+| `MindMapLayout.bottom`     | Downward-expanding / 아래쪽 확장          |
+| `MindMapLayout.radial`     | Circular arrangement / 원형 배치          |
+| `MindMapLayout.horizontal` | Left-right split / 좌우 분할              |
+| `MindMapLayout.vertical`   | Top-bottom split / 상하 분할              |
 
 ### Node Shapes / 노드 모양
 
-| Shape / 모양 | Description / 설명 |
-|--------------|-------------------|
+| Shape / 모양                 | Description / 설명                             |
+| ---------------------------- | ---------------------------------------------- |
 | `NodeShape.roundedRectangle` | Rounded corners (default) / 둥근 모서리 (기본) |
-| `NodeShape.circle` | Perfect circle / 완전한 원 |
-| `NodeShape.rectangle` | Sharp corners / 날카로운 모서리 |
-| `NodeShape.diamond` | Diamond shape / 다이아몬드 모양 |
-| `NodeShape.hexagon` | Six-sided polygon / 육각형 |
-| `NodeShape.ellipse` | Oval shape / 타원형 |
+| `NodeShape.circle`           | Perfect circle / 완전한 원                     |
+| `NodeShape.rectangle`        | Sharp corners / 날카로운 모서리                |
+| `NodeShape.diamond`          | Diamond shape / 다이아몬드 모양                |
+| `NodeShape.hexagon`          | Six-sided polygon / 육각형                     |
+| `NodeShape.ellipse`          | Oval shape / 타원형                            |
 
 ## Performance / 성능
 
@@ -213,13 +222,16 @@ We welcome contributions! Whether you're fixing bugs, adding features, or improv
 ### Quick Contributing Guide / 빠른 기여 가이드
 
 1. **🐛 Found a bug?** / 버그를 발견하셨나요?
+
    - Check [existing issues](https://github.com/devpark435/reactive_mind_map/issues) first / [기존 이슈들](https://github.com/devpark435/reactive_mind_map/issues)을 먼저 확인하세요
    - Use our [Bug Report template](https://github.com/devpark435/reactive_mind_map/issues/new?template=bug_report.yml) / [버그 리포트 템플릿](https://github.com/devpark435/reactive_mind_map/issues/new?template=bug_report.yml)을 사용하세요
 
 2. **💡 Have a feature idea?** / 기능 아이디어가 있으신가요?
+
    - Use our [Feature Request template](https://github.com/devpark435/reactive_mind_map/issues/new?template=feature_request.yml) / [기능 요청 템플릿](https://github.com/devpark435/reactive_mind_map/issues/new?template=feature_request.yml)을 사용하세요
 
 3. **❓ Need help?** / 도움이 필요하신가요?
+
    - Use our [Question template](https://github.com/devpark435/reactive_mind_map/issues/new?template=question.yml) / [질문 템플릿](https://github.com/devpark435/reactive_mind_map/issues/new?template=question.yml)을 사용하세요
 
 4. **🔧 Want to contribute code?** / 코드 기여를 원하시나요?

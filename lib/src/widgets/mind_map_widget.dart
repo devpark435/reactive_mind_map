@@ -9,11 +9,12 @@ import '../enums/mind_map_layout.dart';
 import '../enums/node_shape.dart';
 import '../painters/mind_map_painter.dart';
 import '../painters/node_painter.dart';
+import '../controllers/mind_map_controller.dart';
 
 /// 커스터마이징 가능한 마인드맵 위젯 / Customizable mind map widget
 class MindMapWidget extends StatefulWidget {
   /// 마인드맵 데이터 / Mind map data
-  final MindMapData data;
+  final MindMapData? data;
 
   /// 마인드맵 스타일 / Mind map style
   final MindMapStyle style;
@@ -51,9 +52,12 @@ class MindMapWidget extends StatefulWidget {
   /// Initial zoom scale for the mind map (1.0 = no zoom)
   final double initialScale;
 
+  /// Controller for the mind map
+  final MindMapController? controller;
+
   const MindMapWidget({
     super.key,
-    required this.data,
+    this.data,
     this.style = const MindMapStyle(),
     this.onNodeTap,
     this.onNodeLongPress,
@@ -66,6 +70,7 @@ class MindMapWidget extends StatefulWidget {
     this.isNodesCollapsed = false,
     this.initialScale = 1.0,
     this.captureKey,
+    required this.controller,
   });
 
   @override
@@ -121,7 +126,10 @@ class _MindMapWidgetState extends State<MindMapWidget>
     if (oldWidget.data != widget.data ||
         oldWidget.style != widget.style ||
         oldWidget.isNodesCollapsed != widget.isNodesCollapsed ||
-        oldWidget.initialScale != widget.initialScale) {
+        oldWidget.initialScale != widget.initialScale ||
+        oldWidget.controller != widget.controller) {
+      oldWidget.controller?.removeListener(_handleControllerUpdate);
+      widget.controller?.addListener(_handleControllerUpdate);
       _initializeMindMap();
       // Re-center after layout updates
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -141,18 +149,23 @@ class _MindMapWidgetState extends State<MindMapWidget>
     for (var controller in _activeAnimations) {
       controller.dispose();
     }
+    widget.controller?.removeListener(_handleControllerUpdate);
     super.dispose();
   }
 
   /// 마인드맵 초기화 / Initialize mind map
   void _initializeMindMap() {
+    final sourceData = widget.controller?.root ?? widget.data!;
     _rootNode = MindMapNode.fromData(
-      widget.data,
+      sourceData,
       0,
       defaultColors: widget.style.defaultNodeColors,
     );
     // apply default expansion/collapse to all nodes
     _applyInitialExpansion(_rootNode);
+    if (widget.controller != null) {
+      widget.controller!.addListener(_handleControllerUpdate);
+    }
   }
 
   /// Recursively set each node's expanded state based on the isNodesCollapsed flag
@@ -857,7 +870,9 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
   /// 원본 데이터 찾기 / Find original data
   MindMapData? _findOriginalData(String nodeId) {
-    return _searchData(widget.data, nodeId);
+    final rootData = widget.controller?.root ?? widget.data;
+    if (rootData == null) return null;
+    return _searchData(rootData, nodeId);
   }
 
   MindMapData? _searchData(MindMapData data, String targetId) {
@@ -1055,6 +1070,13 @@ class _MindMapWidgetState extends State<MindMapWidget>
         ),
       ),
     );
+  }
+
+  /// Handle controller updates
+  void _handleControllerUpdate() {
+    if (!mounted) return;
+    _initializeMindMap();
+    _calculateCanvasAndLayout();
   }
 }
 
