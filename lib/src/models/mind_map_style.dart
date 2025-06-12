@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../enums/mind_map_layout.dart';
 import '../enums/node_shape.dart';
+import 'dart:math' as math;
 
 /// 마인드맵의 전체적인 스타일을 정의하는 클래스 / Class that defines the overall style of the mind map
 class MindMapStyle {
@@ -225,16 +226,16 @@ class MindMapStyle {
         defaultTextStyle.copyWith(fontSize: getTextSize(level));
 
     // TextPainter를 사용해서 실제 텍스트 크기 측정 / Measure actual text size using TextPainter
+
     final textPainter = TextPainter(
       text: TextSpan(text: text, style: textStyle),
       textDirection: TextDirection.ltr,
       maxLines: null,
     );
-
     textPainter.layout(maxWidth: maxNodeWidth - textPadding.horizontal);
 
-    final textWidth = textPainter.width;
-    final textHeight = textPainter.height;
+    final textWidth = textPainter.width + 30;
+    final textHeight = textPainter.height + 30;
 
     // 패딩을 포함한 최종 크기 계산 / Calculate final size including padding
     double nodeWidth = textWidth + textPadding.horizontal;
@@ -260,9 +261,22 @@ class MindMapStyle {
     TextStyle? customTextStyle,
   }) {
     if (customSize != null) {
-      return customSize;
+      // If auto-sizing disabled, keep custom size
+      if (!enableAutoSizing) {
+        return customSize;
+      }
+      // Otherwise, ensure node is at least large enough for content
+      final dynSize = calculateNodeSize(
+        text,
+        level,
+        customTextStyle: customTextStyle,
+      );
+      final width = math.max(customSize.width, dynSize.width);
+      final height = math.max(customSize.height, dynSize.height);
+      return Size(width, height);
     }
 
+    // No custom size: calculate size based on text
     return calculateNodeSize(text, level, customTextStyle: customTextStyle);
   }
 }

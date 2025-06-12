@@ -42,6 +42,15 @@ class MindMapWidget extends StatefulWidget {
   /// 캔버스 여백 / Canvas padding
   final EdgeInsets canvasPadding;
 
+  /// Optional key to capture the full mind map canvas (wraps canvas in RepaintBoundary) to give the user the ability to save the mind map as an image
+  final GlobalKey? captureKey;
+
+  /// Whether nodes should be collapsed by default (false = open all nodes)
+  final bool isNodesCollapsed;
+
+  /// Initial zoom scale for the mind map (1.0 = no zoom)
+  final double initialScale;
+
   const MindMapWidget({
     super.key,
     required this.data,
@@ -54,6 +63,9 @@ class MindMapWidget extends StatefulWidget {
     this.viewerOptions,
     this.minCanvasSize = const Size(1200, 800),
     this.canvasPadding = const EdgeInsets.all(300),
+    this.isNodesCollapsed = false,
+    this.initialScale = 1.0,
+    this.captureKey,
   });
 
   @override
@@ -79,6 +91,8 @@ class InteractiveViewerOptions {
 
 class _MindMapWidgetState extends State<MindMapWidget>
     with TickerProviderStateMixin {
+  // Controller to manage initial centering in InteractiveViewer
+  late TransformationController _transformationController;
   late MindMapNode _rootNode;
   final List<AnimationController> _activeAnimations = [];
   String? _selectedNodeId;
@@ -89,18 +103,33 @@ class _MindMapWidgetState extends State<MindMapWidget>
   @override
   void initState() {
     super.initState();
+    // Initialize transformation controller for centering
+    _transformationController = TransformationController();
     _initializeMindMap();
     _calculateCanvasAndLayout();
+    // Center the root after first frame if pan/zoom is enabled
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if ((widget.viewerOptions?.enablePanAndZoom ?? true)) {
+        _centerView();
+      }
+    });
   }
 
   @override
   void didUpdateWidget(MindMapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.data != widget.data || oldWidget.style != widget.style) {
+    if (oldWidget.data != widget.data ||
+        oldWidget.style != widget.style ||
+        oldWidget.isNodesCollapsed != widget.isNodesCollapsed ||
+        oldWidget.initialScale != widget.initialScale) {
       _initializeMindMap();
+      // Re-center after layout updates
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _calculateCanvasAndLayout();
+          if ((widget.viewerOptions?.enablePanAndZoom ?? true)) {
+            _centerView();
+          }
         }
       });
     }
@@ -108,6 +137,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
   @override
   void dispose() {
+    _transformationController.dispose();
     for (var controller in _activeAnimations) {
       controller.dispose();
     }
@@ -121,6 +151,16 @@ class _MindMapWidgetState extends State<MindMapWidget>
       0,
       defaultColors: widget.style.defaultNodeColors,
     );
+    // apply default expansion/collapse to all nodes
+    _applyInitialExpansion(_rootNode);
+  }
+
+  /// Recursively set each node's expanded state based on the isNodesCollapsed flag
+  void _applyInitialExpansion(MindMapNode node) {
+    node.isExpanded = !widget.isNodesCollapsed;
+    for (var child in node.children) {
+      _applyInitialExpansion(child);
+    }
   }
 
   /// 캔버스 크기 계산 및 레이아웃 설정 / Calculate canvas size and layout
@@ -831,23 +871,57 @@ class _MindMapWidgetState extends State<MindMapWidget>
     return null;
   }
 
+  /// Centers the InteractiveViewer so the root node appears in the viewport center at the given scale.
+  void _centerView() {
+    final Size screenSize = MediaQuery.of(context).size;
+    final double scale = widget.initialScale;
+    // compute translation so that rootPosition maps to screen center at the given scale
+    final double tx = screenSize.width / 2 - (_rootPosition.dx * scale);
+    final double ty = screenSize.height / 2 - (_rootPosition.dy * scale);
+    _transformationController.value =
+        Matrix4.identity()
+          ..translate(tx, ty)
+          ..scale(scale);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final canvasSize =
+        widget.canvasSize ??
+        Size(_actualCanvasSize.width, _actualCanvasSize.height);
     final viewerOptions =
         widget.viewerOptions ?? const InteractiveViewerOptions();
 
-    final mindMapContent = Container(
-      width: _actualCanvasSize.width,
-      height: _actualCanvasSize.height,
-      color: widget.style.backgroundColor,
-      child: CustomPaint(
-        painter: MindMapPainter(_rootNode, widget.style),
-        child: Stack(children: _buildAllNodes(_rootNode)),
-      ),
-    );
+    // Wrap the full canvas in a RepaintBoundary if a captureKey is provided
+    final mindMapContent =
+        (widget.captureKey != null)
+            ? RepaintBoundary(
+              key: widget.captureKey,
+              child: Container(
+                width: canvasSize.width,
+                height: canvasSize.height,
+                color: widget.style.backgroundColor,
+                child: CustomPaint(
+                  painter: MindMapPainter(_rootNode, widget.style),
+                  child: Stack(children: _buildAllNodes(_rootNode)),
+                ),
+              ),
+            )
+            : Container(
+              width: _actualCanvasSize.width,
+              height: _actualCanvasSize.height,
+              color: widget.style.backgroundColor,
+              child: CustomPaint(
+                painter: MindMapPainter(_rootNode, widget.style),
+                child: Stack(children: _buildAllNodes(_rootNode)),
+              ),
+            );
 
     if (viewerOptions.enablePanAndZoom) {
       return InteractiveViewer(
+        // Disable clipping so we can capture the full mind map
+        clipBehavior: Clip.none,
+        transformationController: _transformationController,
         constrained: viewerOptions.constrained,
         boundaryMargin: viewerOptions.boundaryMargin,
         minScale: viewerOptions.minScale,
@@ -953,7 +1027,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
                       style: (node.textStyle ?? widget.style.defaultTextStyle)
                           .copyWith(color: textColor, fontSize: textSize),
                       maxLines: null,
-                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
                     ),
                   ),
                 ),
