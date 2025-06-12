@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reactive_mind_map/reactive_mind_map.dart';
+import 'package:reactive_mind_map/src/controllers/mind_map_controller.dart';
 
 void main() {
   runApp(const MyApp());
@@ -27,8 +28,14 @@ class MindMapExamplePage extends StatefulWidget {
 }
 
 class _MindMapExamplePageState extends State<MindMapExamplePage> {
-  MindMapData _currentData = DemoData.flutterDev;
+  late final MindMapController _controller;
   MindMapStyle _currentStyle = const MindMapStyle();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = MindMapController(DemoData.flutterDev);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +59,7 @@ class _MindMapExamplePageState extends State<MindMapExamplePage> {
         ],
       ),
       body: MindMapWidget(
-        data: _currentData,
+        controller: _controller,
         style: _currentStyle,
         onNodeTap: (node) {
           ScaffoldMessenger.of(
@@ -253,7 +260,7 @@ class _MindMapExamplePageState extends State<MindMapExamplePage> {
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          _currentData = DemoData.flutterDev;
+                          _controller.root = DemoData.flutterDev;
                         });
                         Navigator.pop(context);
                       },
@@ -262,7 +269,7 @@ class _MindMapExamplePageState extends State<MindMapExamplePage> {
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          _currentData = DemoData.businessPlan;
+                          _controller.root = DemoData.businessPlan;
                         });
                         Navigator.pop(context);
                       },
@@ -271,7 +278,7 @@ class _MindMapExamplePageState extends State<MindMapExamplePage> {
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          _currentData = DemoData.generateLargeData(25);
+                          _controller.root = DemoData.generateLargeData(25);
                         });
                         Navigator.pop(context);
                       },
@@ -280,7 +287,7 @@ class _MindMapExamplePageState extends State<MindMapExamplePage> {
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          _currentData = DemoData.generateLargeData(50);
+                          _controller.root = DemoData.generateLargeData(50);
                         });
                         Navigator.pop(context);
                       },

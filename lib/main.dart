@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:reactive_mind_map/reactive_mind_map.dart';
 
+import 'src/controllers/mind_map_controller.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -625,7 +627,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: MindMapWidget(
-        data: _customTestData,
+        controller: MindMapController(_customTestData),
         style: MindMapStyle(
           layout: _selectedLayout,
           nodeShape: _selectedShape,
