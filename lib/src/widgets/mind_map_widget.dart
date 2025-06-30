@@ -331,7 +331,10 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
     List<MindMapNode> nodes = [node];
 
-    if (node.isExpanded) {
+    bool shouldIncludeChildren =
+        node.isExpanded || node.children.any((child) => child.isAnimating);
+
+    if (shouldIncludeChildren) {
       for (var child in node.children) {
         nodes.addAll(
           _collectAllVisibleNodes(child, visited: Set.from(visited)),
@@ -518,13 +521,14 @@ class _MindMapWidgetState extends State<MindMapWidget>
     }
     visited.add(node.id);
 
-    if (node.children.isEmpty) {
-      final nodeSize = widget.style.getActualNodeSize(
-        node.title,
-        node.level,
-        customSize: node.size,
-        customTextStyle: node.textStyle,
-      );
+    final nodeSize = widget.style.getActualNodeSize(
+      node.title,
+      node.level,
+      customSize: node.size,
+      customTextStyle: node.textStyle,
+    );
+
+    if (!node.isExpanded || node.children.isEmpty) {
       node.subtreeHeight = nodeSize.height + widget.style.nodeMargin;
       return node.subtreeHeight;
     }
@@ -537,17 +541,10 @@ class _MindMapWidgetState extends State<MindMapWidget>
       );
     }
 
-    final nodeSize = widget.style.getActualNodeSize(
-      node.title,
-      node.level,
-      customSize: node.size,
-      customTextStyle: node.textStyle,
-    );
+    final additionalMargin = nodeSize.height * 0.3;
+    final minSpacing = widget.style.nodeMargin;
 
-    final additionalMargin = nodeSize.height * 0.5;
-    final minSpacing = widget.style.nodeMargin * 2;
-
-    final childCountFactor = math.max(1.0, node.children.length * 0.2);
+    final childCountFactor = math.max(1.0, node.children.length * 0.1);
     final expandedMargin = additionalMargin * childCountFactor;
 
     node.subtreeHeight = math.max(
@@ -573,17 +570,20 @@ class _MindMapWidgetState extends State<MindMapWidget>
     }
     visited.add(node.id);
 
-    if (node.children.isEmpty) {
-      final nodeSize = widget.style.getActualNodeSize(
-        node.title,
-        node.level,
-        customSize: node.size,
-        customTextStyle: node.textStyle,
-      );
+    final nodeSize = widget.style.getActualNodeSize(
+      node.title,
+      node.level,
+      customSize: node.size,
+      customTextStyle: node.textStyle,
+    );
+
+    // 축소된 노드는 자식 공간을 미리 확보하지 않음
+    if (!node.isExpanded || node.children.isEmpty) {
       node.subtreeWidth = nodeSize.width + widget.style.nodeMargin;
       return node.subtreeWidth;
     }
 
+    // 확장된 노드만 자식 공간 계산
     double totalChildWidth = 0;
     for (var child in node.children) {
       totalChildWidth += _calculateSubtreeWidths(
@@ -592,17 +592,10 @@ class _MindMapWidgetState extends State<MindMapWidget>
       );
     }
 
-    final nodeSize = widget.style.getActualNodeSize(
-      node.title,
-      node.level,
-      customSize: node.size,
-      customTextStyle: node.textStyle,
-    );
+    final additionalMargin = nodeSize.width * 0.3;
+    final minSpacing = widget.style.nodeMargin;
 
-    final additionalMargin = nodeSize.width * 0.5;
-    final minSpacing = widget.style.nodeMargin * 2;
-
-    final childCountFactor = math.max(1.0, node.children.length * 0.2);
+    final childCountFactor = math.max(1.0, node.children.length * 0.1);
     final expandedMargin = additionalMargin * childCountFactor;
 
     node.subtreeWidth = math.max(
@@ -617,7 +610,10 @@ class _MindMapWidgetState extends State<MindMapWidget>
   void _assignPositions(MindMapNode parent, int level, {Set<String>? visited}) {
     visited ??= <String>{};
 
-    if (visited.contains(parent.id) || parent.children.isEmpty) return;
+    if (visited.contains(parent.id) ||
+        parent.children.isEmpty ||
+        !parent.isExpanded)
+      return;
     visited.add(parent.id);
 
     if (parent.parentDirection != null && level > 1) {
@@ -1003,7 +999,10 @@ class _MindMapWidgetState extends State<MindMapWidget>
           node.isExpanded = false;
         }
       } else {
-        _calculateCanvasAndLayout();
+        for (var child in node.children) {
+          child.isAnimating = true;
+        }
+        _animateChildrenCollapse(node);
       }
     });
 
@@ -1158,6 +1157,75 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
     controller.forward().catchError((error) {
       debugPrint('Animation start error: $error');
+      _activeAnimations.remove(controller);
+      controller.dispose();
+    });
+  }
+
+  void _animateChildrenCollapse(MindMapNode node) {
+    if (!mounted || node.children.isEmpty) return;
+
+    final controller = AnimationController(
+      duration: widget.style.animationDuration,
+      vsync: this,
+    );
+
+    _activeAnimations.add(controller);
+
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: widget.style.animationCurve,
+    );
+
+    final startPositions = <String, Offset>{};
+    for (var child in node.children) {
+      startPositions[child.id] = child.position;
+    }
+
+    controller.addListener(() {
+      if (!mounted) return;
+
+      final progress = animation.value;
+
+      try {
+        for (var child in node.children) {
+          if (child.isAnimating) {
+            final startPos = startPositions[child.id];
+            if (startPos != null) {
+              child.position = Offset.lerp(startPos, node.position, progress)!;
+            }
+          }
+        }
+
+        if (progress >= 1.0) {
+          for (var child in node.children) {
+            child.isAnimating = false;
+            child.hasFixedPosition = false;
+            child.position = node.position;
+          }
+          _activeAnimations.remove(controller);
+          controller.dispose();
+          _calculateCanvasAndLayout();
+        }
+
+        if (mounted) {
+          setState(() {});
+        }
+      } catch (e) {
+        debugPrint('Collapse animation error: $e');
+        for (var child in node.children) {
+          child.isAnimating = false;
+          child.hasFixedPosition = false;
+          child.position = node.position;
+        }
+        _activeAnimations.remove(controller);
+        controller.dispose();
+        _calculateCanvasAndLayout();
+      }
+    });
+
+    controller.forward().catchError((error) {
+      debugPrint('Collapse animation start error: $error');
       _activeAnimations.remove(controller);
       controller.dispose();
     });

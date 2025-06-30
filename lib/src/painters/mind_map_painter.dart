@@ -18,7 +18,12 @@ class MindMapPainter extends CustomPainter {
 
   /// 연결선을 그리는 메소드
   void _drawConnections(Canvas canvas, MindMapNode node) {
-    if (!node.isExpanded || node.children.isEmpty) return;
+    if (node.children.isEmpty) return;
+
+    bool shouldShowChildren =
+        node.isExpanded || node.children.any((child) => child.isAnimating);
+
+    if (!shouldShowChildren) return;
 
     for (var child in node.children) {
       _drawConnection(canvas, node, child);
