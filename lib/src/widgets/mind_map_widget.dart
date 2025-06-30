@@ -999,9 +999,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
           node.isExpanded = false;
         }
       } else {
-        for (var child in node.children) {
-          child.isAnimating = true;
-        }
+        _setAllDescendantsAnimating(node, true);
         _animateChildrenCollapse(node);
       }
     });
@@ -1162,6 +1160,13 @@ class _MindMapWidgetState extends State<MindMapWidget>
     });
   }
 
+  void _setAllDescendantsAnimating(MindMapNode node, bool isAnimating) {
+    for (var child in node.children) {
+      child.isAnimating = isAnimating;
+      _setAllDescendantsAnimating(child, isAnimating);
+    }
+  }
+
   void _animateChildrenCollapse(MindMapNode node) {
     if (!mounted || node.children.isEmpty) return;
 
@@ -1198,8 +1203,8 @@ class _MindMapWidgetState extends State<MindMapWidget>
         }
 
         if (progress >= 1.0) {
+          _setAllDescendantsAnimating(node, false);
           for (var child in node.children) {
-            child.isAnimating = false;
             child.hasFixedPosition = false;
             child.position = node.position;
           }
@@ -1213,8 +1218,8 @@ class _MindMapWidgetState extends State<MindMapWidget>
         }
       } catch (e) {
         debugPrint('Collapse animation error: $e');
+        _setAllDescendantsAnimating(node, false);
         for (var child in node.children) {
-          child.isAnimating = false;
           child.hasFixedPosition = false;
           child.position = node.position;
         }

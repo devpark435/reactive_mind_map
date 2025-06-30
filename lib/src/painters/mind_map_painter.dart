@@ -26,8 +26,15 @@ class MindMapPainter extends CustomPainter {
     if (!shouldShowChildren) return;
 
     for (var child in node.children) {
-      _drawConnection(canvas, node, child);
-      _drawConnections(canvas, child);
+      if (child.isAnimating && !node.isExpanded) {
+        _drawCollapsingConnection(canvas, node, child);
+      } else {
+        _drawConnection(canvas, node, child);
+      }
+
+      if (!(child.isAnimating && !node.isExpanded)) {
+        _drawConnections(canvas, child);
+      }
     }
   }
 
@@ -44,6 +51,66 @@ class MindMapPainter extends CustomPainter {
     } else {
       _drawStraightConnection(canvas, parent, child, paint);
     }
+  }
+
+  void _drawCollapsingConnection(
+    Canvas canvas,
+    MindMapNode parent,
+    MindMapNode child,
+  ) {
+    final distance = (child.position - parent.position).distance;
+    final maxDistance = 200.0;
+    final alpha = (distance / maxDistance).clamp(0.1, 0.6);
+
+    final paint =
+        Paint()
+          ..color = style.connectionColor.withValues(alpha: alpha)
+          ..strokeWidth = style.connectionWidth * (alpha / 0.6)
+          ..style = PaintingStyle.stroke;
+
+    if (style.useCustomCurve) {
+      _drawSmoothCollapsingCurve(canvas, parent, child, paint);
+    } else {
+      _drawStraightConnection(canvas, parent, child, paint);
+    }
+  }
+
+  void _drawSmoothCollapsingCurve(
+    Canvas canvas,
+    MindMapNode parent,
+    MindMapNode child,
+    Paint paint,
+  ) {
+    final path = Path();
+
+    final connectionPoints = _getConnectionPoints(parent, child);
+    final startPoint = connectionPoints['start']!;
+    final endPoint = connectionPoints['end']!;
+
+    path.moveTo(startPoint.dx, startPoint.dy);
+
+    final distance = (endPoint - startPoint).distance;
+    final tension = (distance / 200.0).clamp(0.3, 1.0);
+
+    final midPoint = Offset(
+      (startPoint.dx + endPoint.dx) / 2,
+      (startPoint.dy + endPoint.dy) / 2,
+    );
+
+    final controlOffset = (endPoint - startPoint) * 0.4 * tension;
+    final control1 = startPoint + Offset(controlOffset.dx * 0.5, 0);
+    final control2 = endPoint - Offset(controlOffset.dx * 0.5, 0);
+
+    path.cubicTo(
+      control1.dx,
+      control1.dy,
+      control2.dx,
+      control2.dy,
+      endPoint.dx,
+      endPoint.dy,
+    );
+
+    canvas.drawPath(path, paint);
   }
 
   /// 곡선 연결선 그리기
