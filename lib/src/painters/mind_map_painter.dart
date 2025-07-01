@@ -31,10 +31,7 @@ class MindMapPainter extends CustomPainter {
       } else {
         _drawConnection(canvas, node, child);
       }
-
-      if (!(child.isAnimating && !node.isExpanded)) {
-        _drawConnections(canvas, child);
-      }
+      _drawConnections(canvas, child);
     }
   }
 
@@ -59,19 +56,78 @@ class MindMapPainter extends CustomPainter {
     MindMapNode child,
   ) {
     final distance = (child.position - parent.position).distance;
-    final maxDistance = 200.0;
-    final alpha = (distance / maxDistance).clamp(0.1, 0.6);
+
+    final parentSize = style.getActualNodeSize(
+      parent.title,
+      parent.level,
+      customSize: parent.size,
+      customTextStyle: parent.textStyle,
+    );
+
+    final minDistance = parentSize.width / 2 + 20;
+
+    if (distance < minDistance) return;
+
+    final fadeDistance = parentSize.width + 50;
+    final alpha =
+        distance < fadeDistance
+            ? ((distance - minDistance) / (fadeDistance - minDistance) * 0.6)
+                .clamp(0.0, 0.6)
+            : 0.6;
 
     final paint =
         Paint()
           ..color = style.connectionColor.withValues(alpha: alpha)
-          ..strokeWidth = style.connectionWidth * (alpha / 0.6)
+          ..strokeWidth = style.connectionWidth
           ..style = PaintingStyle.stroke;
 
+    final childSize = style.getActualNodeSize(
+      child.title,
+      child.level,
+      customSize: child.size,
+      customTextStyle: child.textStyle,
+    );
+
+    final angle = math.atan2(
+      child.position.dy - parent.position.dy,
+      child.position.dx - parent.position.dx,
+    );
+
+    final startPoint = Offset(
+      parent.position.dx + math.cos(angle) * parentSize.width / 2,
+      parent.position.dy + math.sin(angle) * parentSize.height / 2,
+    );
+
+    final endPoint = Offset(
+      child.position.dx - math.cos(angle) * childSize.width / 2,
+      child.position.dy - math.sin(angle) * childSize.height / 2,
+    );
+
     if (style.useCustomCurve) {
-      _drawSmoothCollapsingCurve(canvas, parent, child, paint);
+      final path = Path();
+      path.moveTo(startPoint.dx, startPoint.dy);
+
+      final direction = endPoint - startPoint;
+      final directionLength = direction.distance;
+      final controlDistance = directionLength * 0.4;
+
+      if (directionLength > 0) {
+        final control1 = Offset(startPoint.dx + controlDistance, startPoint.dy);
+        final control2 = Offset(endPoint.dx - controlDistance, endPoint.dy);
+
+        path.cubicTo(
+          control1.dx,
+          control1.dy,
+          control2.dx,
+          control2.dy,
+          endPoint.dx,
+          endPoint.dy,
+        );
+
+        canvas.drawPath(path, paint);
+      }
     } else {
-      _drawStraightConnection(canvas, parent, child, paint);
+      canvas.drawLine(startPoint, endPoint, paint);
     }
   }
 
@@ -82,24 +138,43 @@ class MindMapPainter extends CustomPainter {
     Paint paint,
   ) {
     final path = Path();
-
     final connectionPoints = _getConnectionPoints(parent, child);
     final startPoint = connectionPoints['start']!;
     final endPoint = connectionPoints['end']!;
 
     path.moveTo(startPoint.dx, startPoint.dy);
 
-    final distance = (endPoint - startPoint).distance;
-    final tension = (distance / 200.0).clamp(0.3, 1.0);
+    final distance = (child.position - parent.position).distance;
+    final maxDistance = 200.0;
+    final progress = (distance / maxDistance).clamp(0.0, 1.0);
 
-    final midPoint = Offset(
-      (startPoint.dx + endPoint.dx) / 2,
-      (startPoint.dy + endPoint.dy) / 2,
-    );
+    final controlOffset = 40.0 * progress;
 
-    final controlOffset = (endPoint - startPoint) * 0.4 * tension;
-    final control1 = startPoint + Offset(controlOffset.dx * 0.5, 0);
-    final control2 = endPoint - Offset(controlOffset.dx * 0.5, 0);
+    final direction = _getConnectionDirection(startPoint, endPoint);
+    Offset control1, control2;
+
+    switch (direction) {
+      case 'right':
+        control1 = Offset(startPoint.dx + controlOffset, startPoint.dy);
+        control2 = Offset(endPoint.dx - controlOffset * 0.5, endPoint.dy);
+        break;
+      case 'left':
+        control1 = Offset(startPoint.dx - controlOffset, startPoint.dy);
+        control2 = Offset(endPoint.dx + controlOffset * 0.5, endPoint.dy);
+        break;
+      case 'top':
+        control1 = Offset(startPoint.dx, startPoint.dy - controlOffset);
+        control2 = Offset(endPoint.dx, endPoint.dy + controlOffset * 0.5);
+        break;
+      case 'bottom':
+        control1 = Offset(startPoint.dx, startPoint.dy + controlOffset);
+        control2 = Offset(endPoint.dx, endPoint.dy - controlOffset * 0.5);
+        break;
+      default:
+        final midPoint = Offset.lerp(startPoint, endPoint, 0.5)!;
+        control1 = Offset.lerp(startPoint, midPoint, 0.5)!;
+        control2 = Offset.lerp(midPoint, endPoint, 0.5)!;
+    }
 
     path.cubicTo(
       control1.dx,
@@ -122,14 +197,12 @@ class MindMapPainter extends CustomPainter {
   ) {
     final path = Path();
 
-    // 레이아웃에 따라 연결점 계산
     final connectionPoints = _getConnectionPoints(parent, child);
     final startPoint = connectionPoints['start']!;
     final endPoint = connectionPoints['end']!;
 
     path.moveTo(startPoint.dx, startPoint.dy);
 
-    // 레이아웃에 따른 제어점 계산
     final controlPoints = _getControlPoints(
       startPoint,
       endPoint,
@@ -168,7 +241,6 @@ class MindMapPainter extends CustomPainter {
     MindMapNode parent,
     MindMapNode child,
   ) {
-    // 동적 크기 계산
     final parentSize = style.getActualNodeSize(
       parent.title,
       parent.level,
@@ -185,7 +257,6 @@ class MindMapPainter extends CustomPainter {
     Offset startPoint;
     Offset endPoint;
 
-    // 분할 레이아웃에서는 자식의 parentDirection을 기준으로 연결점 계산
     if ((style.layout == MindMapLayout.horizontal ||
             style.layout == MindMapLayout.vertical) &&
         child.parentDirection != null) {
@@ -231,7 +302,6 @@ class MindMapPainter extends CustomPainter {
           );
           break;
         default:
-          // 기본값: 각도 기반 계산
           final angle = math.atan2(
             child.position.dy - parent.position.dy,
             child.position.dx - parent.position.dx,
@@ -246,7 +316,6 @@ class MindMapPainter extends CustomPainter {
           );
       }
     } else {
-      // 기존 레이아웃별 로직
       switch (style.layout) {
         case MindMapLayout.right:
           startPoint = Offset(
@@ -295,7 +364,6 @@ class MindMapPainter extends CustomPainter {
         case MindMapLayout.radial:
         case MindMapLayout.horizontal:
         case MindMapLayout.vertical:
-          // 각도 기반 연결점 계산
           final angle = math.atan2(
             child.position.dy - parent.position.dy,
             child.position.dx - parent.position.dx,
@@ -315,7 +383,7 @@ class MindMapPainter extends CustomPainter {
     return {'start': startPoint, 'end': endPoint};
   }
 
-  /// 베지어 곡선의 제어점 계산 / Calculate control points for Bezier curves
+  /// 베지어 곡선의 제어점 계산
   Map<String, Offset> _getControlPoints(
     Offset start,
     Offset end,
@@ -324,7 +392,6 @@ class MindMapPainter extends CustomPainter {
   ) {
     Offset control1, control2;
 
-    // 노드 크기 고려 / Consider node sizes
     final parentSize = style.getActualNodeSize(
       parent.title,
       parent.level,
@@ -338,12 +405,10 @@ class MindMapPainter extends CustomPainter {
       customTextStyle: child.textStyle,
     );
 
-    // 노드 간 거리 계산 / Calculate distance between nodes
     final distance = math.sqrt(
       math.pow(end.dx - start.dx, 2) + math.pow(end.dy - start.dy, 2),
     );
 
-    // 제어점 거리: 노드 크기와 거리에 비례하여 동적 계산 / Control point distance: dynamic calculation based on node size and distance
     final maxNodeSize = math.max(
       math.max(parentSize.width, parentSize.height),
       math.max(childSize.width, childSize.height),
@@ -353,7 +418,6 @@ class MindMapPainter extends CustomPainter {
       math.min(distance * 0.4, maxNodeSize + 60),
     );
 
-    // 분할 레이아웃에서는 방향에 따라 제어점을 다르게 계산 / Calculate control points differently based on direction in split layouts
     final direction = _getConnectionDirection(start, end);
 
     switch (direction) {
@@ -374,7 +438,6 @@ class MindMapPainter extends CustomPainter {
         control2 = Offset(end.dx, end.dy - controlDistance);
         break;
       default:
-        // 기본값: 거리 기반 제어점 / Default: distance-based control points
         final midX = (start.dx + end.dx) / 2;
         final midY = (start.dy + end.dy) / 2;
         final controlOffset = controlDistance * 0.6;
@@ -391,7 +454,7 @@ class MindMapPainter extends CustomPainter {
     return {'control1': control1, 'control2': control2};
   }
 
-  /// 연결 방향 결정 / Determine connection direction
+  /// 연결 방향 결정
   String _getConnectionDirection(Offset start, Offset end) {
     switch (style.layout) {
       case MindMapLayout.right:
@@ -405,7 +468,6 @@ class MindMapPainter extends CustomPainter {
       case MindMapLayout.horizontal:
       case MindMapLayout.vertical:
       case MindMapLayout.radial:
-        // 좌표 차이로 방향 판단 / Determine direction based on coordinate difference
         final dx = end.dx - start.dx;
         final dy = end.dy - start.dy;
 
