@@ -981,23 +981,26 @@ class _MindMapWidgetState extends State<MindMapWidget>
     if (node.children.isEmpty || !mounted) return;
 
     HapticFeedback.lightImpact();
-
-    // 🎯 노드 토글 상태 설정
     _isTogglingNode = true;
 
     if (!node.isExpanded) {
-      // Expand: animate children from parent position to their target
       setState(() {
         node.isExpanded = true;
         try {
           _calculateCanvasAndLayout();
 
-          for (var child in node.children) {
+          // Collect all visible descendants (including children, grandchildren, etc.)
+          final allVisibleDescendants =
+              _collectAllVisibleNodes(node).where((n) => n != node).toList();
+
+          // Set all descendants' positions to the parent node's position and mark as animating
+          for (var child in allVisibleDescendants) {
             child.position = node.position;
             child.isAnimating = true;
           }
 
-          _animateChildren(node);
+          // Animate all descendants to their target positions
+          _animateDescendantsExpansion(node, allVisibleDescendants);
         } catch (e) {
           debugPrint('Toggle error: $e');
           node.isExpanded = false;
@@ -1005,9 +1008,8 @@ class _MindMapWidgetState extends State<MindMapWidget>
       });
     } else {
       // Collapse: animate all visible descendants to the parent position, then collapse
-      final allVisibleDescendants = _collectAllVisibleNodes(node)
-          .where((n) => n != node)
-          .toList();
+      final allVisibleDescendants =
+          _collectAllVisibleNodes(node).where((n) => n != node).toList();
 
       final startPositions = <String, Offset>{};
       for (var child in allVisibleDescendants) {
@@ -1035,7 +1037,8 @@ class _MindMapWidgetState extends State<MindMapWidget>
               final startPos = startPositions[child.id];
               if (startPos != null) {
                 // Animate from current position to parent node's position
-                child.position = Offset.lerp(startPos, node.position, progress)!;
+                child.position =
+                    Offset.lerp(startPos, node.position, progress)!;
               }
             }
           }
@@ -1166,73 +1169,6 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
     // 부드러운 애니메이션으로 이동 (기존 focusAnimation 지속시간 사용)
     _animateToTransform(newTransform);
-  }
-
-  /// 자식 노드 애니메이션 / Animate children nodes
-  void _animateChildren(MindMapNode node) {
-    if (!mounted || node.children.isEmpty) return;
-
-    final controller = AnimationController(
-      duration: widget.style.animationDuration,
-      vsync: this,
-    );
-
-    _activeAnimations.add(controller);
-
-    final animation = CurvedAnimation(
-      parent: controller,
-      curve: widget.style.animationCurve,
-    );
-
-    final startPositions = <String, Offset>{};
-    for (var child in node.children) {
-      startPositions[child.id] = child.position;
-    }
-
-    controller.addListener(() {
-      if (!mounted) return;
-
-      final progress = animation.value;
-
-      try {
-        for (var child in node.children) {
-          if (child.isAnimating) {
-            final startPos = startPositions[child.id];
-            if (startPos != null) {
-              child.position =
-                  Offset.lerp(startPos, child.targetPosition, progress)!;
-            }
-          }
-        }
-
-        if (progress >= 1.0) {
-          for (var child in node.children) {
-            child.isAnimating = false;
-            child.position = child.targetPosition;
-          }
-          _activeAnimations.remove(controller);
-          controller.dispose();
-        }
-
-        if (mounted) {
-          setState(() {});
-        }
-      } catch (e) {
-        debugPrint('Animation error: $e');
-        for (var child in node.children) {
-          child.isAnimating = false;
-          child.position = child.targetPosition;
-        }
-        _activeAnimations.remove(controller);
-        controller.dispose();
-      }
-    });
-
-    controller.forward().catchError((error) {
-      debugPrint('Animation start error: $error');
-      _activeAnimations.remove(controller);
-      controller.dispose();
-    });
   }
 
   /// 노드 선택 / Select node
@@ -1532,6 +1468,67 @@ class _MindMapWidgetState extends State<MindMapWidget>
     }
 
     return Rect.fromLTRB(minX, minY, maxX, maxY);
+  }
+
+  /// Animate all visible descendants from parent position to their target positions
+  void _animateDescendantsExpansion(
+    MindMapNode node,
+    List<MindMapNode> descendants,
+  ) {
+    if (!mounted || descendants.isEmpty) return;
+
+    final controller = AnimationController(
+      duration: widget.style.animationDuration,
+      vsync: this,
+    );
+    _activeAnimations.add(controller);
+
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: widget.style.animationCurve,
+    );
+
+    final startPositions = <String, Offset>{};
+    for (var child in descendants) {
+      startPositions[child.id] = node.position;
+    }
+
+    controller.addListener(() {
+      if (!mounted) return;
+      final progress = animation.value;
+      try {
+        for (var child in descendants) {
+          if (child.isAnimating) {
+            final startPos = startPositions[child.id];
+            if (startPos != null) {
+              child.position =
+                  Offset.lerp(startPos, child.targetPosition, progress)!;
+            }
+          }
+        }
+        if (mounted) setState(() {});
+      } catch (e) {
+        debugPrint('Expansion animation error: $e');
+      }
+    });
+
+    controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed ||
+          status == AnimationStatus.dismissed) {
+        for (var child in descendants) {
+          child.isAnimating = false;
+          child.position = child.targetPosition;
+        }
+        _activeAnimations.remove(controller);
+        controller.dispose();
+      }
+    });
+
+    controller.forward().catchError((error) {
+      debugPrint('Expansion animation start error: $error');
+      _activeAnimations.remove(controller);
+      controller.dispose();
+    });
   }
 
   @override
