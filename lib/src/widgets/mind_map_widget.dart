@@ -985,10 +985,10 @@ class _MindMapWidgetState extends State<MindMapWidget>
     // 🎯 노드 토글 상태 설정
     _isTogglingNode = true;
 
-    setState(() {
-      node.isExpanded = !node.isExpanded;
-
-      if (node.isExpanded) {
+    if (!node.isExpanded) {
+      // Expand: animate children from parent position to their target
+      setState(() {
+        node.isExpanded = true;
         try {
           _calculateCanvasAndLayout();
 
@@ -1002,10 +1002,82 @@ class _MindMapWidgetState extends State<MindMapWidget>
           debugPrint('Toggle error: $e');
           node.isExpanded = false;
         }
-      } else {
-        _calculateCanvasAndLayout();
+      });
+    } else {
+      // Collapse: animate all visible descendants to the parent position, then collapse
+      final allVisibleDescendants = _collectAllVisibleNodes(node)
+          .where((n) => n != node)
+          .toList();
+
+      final startPositions = <String, Offset>{};
+      for (var child in allVisibleDescendants) {
+        startPositions[child.id] = child.position;
+        child.isAnimating = true;
       }
-    });
+
+      final controller = AnimationController(
+        duration: widget.style.animationDuration,
+        vsync: this,
+      );
+      _activeAnimations.add(controller);
+
+      final animation = CurvedAnimation(
+        parent: controller,
+        curve: widget.style.animationCurve,
+      );
+
+      controller.addListener(() {
+        if (!mounted) return;
+        final progress = animation.value;
+        try {
+          for (var child in allVisibleDescendants) {
+            if (child.isAnimating) {
+              final startPos = startPositions[child.id];
+              if (startPos != null) {
+                // Animate from current position to parent node's position
+                child.position = Offset.lerp(startPos, node.position, progress)!;
+              }
+            }
+          }
+          if (mounted) setState(() {});
+        } catch (e) {
+          debugPrint('Collapse animation error: $e');
+        }
+      });
+
+      controller.addStatusListener((status) {
+        if (status == AnimationStatus.completed ||
+            status == AnimationStatus.dismissed) {
+          for (var child in allVisibleDescendants) {
+            child.isAnimating = false;
+            child.position = node.position;
+          }
+          _activeAnimations.remove(controller);
+          controller.dispose();
+
+          // Collapse after animation
+          if (mounted) {
+            setState(() {
+              node.isExpanded = false;
+              _calculateCanvasAndLayout();
+            });
+          }
+        }
+      });
+
+      controller.forward().catchError((error) {
+        debugPrint('Collapse animation start error: $error');
+        _activeAnimations.remove(controller);
+        controller.dispose();
+        // Fallback: collapse immediately
+        if (mounted) {
+          setState(() {
+            node.isExpanded = false;
+            _calculateCanvasAndLayout();
+          });
+        }
+      });
+    }
 
     // 🎯 노드 확장 시 카메라 동작 설정에 따라 처리
     _handleNodeExpandCamera(node);
