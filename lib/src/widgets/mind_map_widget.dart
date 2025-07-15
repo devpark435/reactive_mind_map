@@ -331,10 +331,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
     List<MindMapNode> nodes = [node];
 
-    bool shouldIncludeChildren =
-        node.isExpanded || node.children.any((child) => child.isAnimating);
-
-    if (shouldIncludeChildren) {
+    if (node.isExpanded) {
       for (var child in node.children) {
         nodes.addAll(
           _collectAllVisibleNodes(child, visited: Set.from(visited)),
@@ -521,14 +518,13 @@ class _MindMapWidgetState extends State<MindMapWidget>
     }
     visited.add(node.id);
 
-    final nodeSize = widget.style.getActualNodeSize(
-      node.title,
-      node.level,
-      customSize: node.size,
-      customTextStyle: node.textStyle,
-    );
-
-    if (!node.isExpanded || node.children.isEmpty) {
+    if (node.children.isEmpty) {
+      final nodeSize = widget.style.getActualNodeSize(
+        node.title,
+        node.level,
+        customSize: node.size,
+        customTextStyle: node.textStyle,
+      );
       node.subtreeHeight = nodeSize.height + widget.style.nodeMargin;
       return node.subtreeHeight;
     }
@@ -541,10 +537,17 @@ class _MindMapWidgetState extends State<MindMapWidget>
       );
     }
 
-    final additionalMargin = nodeSize.height * 0.3;
-    final minSpacing = widget.style.nodeMargin;
+    final nodeSize = widget.style.getActualNodeSize(
+      node.title,
+      node.level,
+      customSize: node.size,
+      customTextStyle: node.textStyle,
+    );
 
-    final childCountFactor = math.max(1.0, node.children.length * 0.1);
+    final additionalMargin = nodeSize.height * 0.5;
+    final minSpacing = widget.style.nodeMargin * 2;
+
+    final childCountFactor = math.max(1.0, node.children.length * 0.2);
     final expandedMargin = additionalMargin * childCountFactor;
 
     node.subtreeHeight = math.max(
@@ -570,20 +573,17 @@ class _MindMapWidgetState extends State<MindMapWidget>
     }
     visited.add(node.id);
 
-    final nodeSize = widget.style.getActualNodeSize(
-      node.title,
-      node.level,
-      customSize: node.size,
-      customTextStyle: node.textStyle,
-    );
-
-    // 축소된 노드는 자식 공간을 미리 확보하지 않음
-    if (!node.isExpanded || node.children.isEmpty) {
+    if (node.children.isEmpty) {
+      final nodeSize = widget.style.getActualNodeSize(
+        node.title,
+        node.level,
+        customSize: node.size,
+        customTextStyle: node.textStyle,
+      );
       node.subtreeWidth = nodeSize.width + widget.style.nodeMargin;
       return node.subtreeWidth;
     }
 
-    // 확장된 노드만 자식 공간 계산
     double totalChildWidth = 0;
     for (var child in node.children) {
       totalChildWidth += _calculateSubtreeWidths(
@@ -592,10 +592,17 @@ class _MindMapWidgetState extends State<MindMapWidget>
       );
     }
 
-    final additionalMargin = nodeSize.width * 0.3;
-    final minSpacing = widget.style.nodeMargin;
+    final nodeSize = widget.style.getActualNodeSize(
+      node.title,
+      node.level,
+      customSize: node.size,
+      customTextStyle: node.textStyle,
+    );
 
-    final childCountFactor = math.max(1.0, node.children.length * 0.1);
+    final additionalMargin = nodeSize.width * 0.5;
+    final minSpacing = widget.style.nodeMargin * 2;
+
+    final childCountFactor = math.max(1.0, node.children.length * 0.2);
     final expandedMargin = additionalMargin * childCountFactor;
 
     node.subtreeWidth = math.max(
@@ -610,10 +617,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
   void _assignPositions(MindMapNode parent, int level, {Set<String>? visited}) {
     visited ??= <String>{};
 
-    if (visited.contains(parent.id) ||
-        parent.children.isEmpty ||
-        !parent.isExpanded)
-      return;
+    if (visited.contains(parent.id) || parent.children.isEmpty) return;
     visited.add(parent.id);
 
     if (parent.parentDirection != null && level > 1) {
@@ -1091,149 +1095,6 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
     // 부드러운 애니메이션으로 이동 (기존 focusAnimation 지속시간 사용)
     _animateToTransform(newTransform);
-  }
-
-  /// 자식 노드 애니메이션 / Animate children nodes
-  void _animateChildren(MindMapNode node) {
-    if (!mounted || node.children.isEmpty) return;
-
-    final controller = AnimationController(
-      duration: widget.style.animationDuration,
-      vsync: this,
-    );
-
-    _activeAnimations.add(controller);
-
-    final animation = CurvedAnimation(
-      parent: controller,
-      curve: widget.style.animationCurve,
-    );
-
-    final startPositions = <String, Offset>{};
-    for (var child in node.children) {
-      startPositions[child.id] = child.position;
-    }
-
-    controller.addListener(() {
-      if (!mounted) return;
-
-      final progress = animation.value;
-
-      try {
-        for (var child in node.children) {
-          if (child.isAnimating) {
-            final startPos = startPositions[child.id];
-            if (startPos != null) {
-              child.position =
-                  Offset.lerp(startPos, child.targetPosition, progress)!;
-            }
-          }
-        }
-
-        if (progress >= 1.0) {
-          for (var child in node.children) {
-            child.isAnimating = false;
-            child.position = child.targetPosition;
-          }
-          _activeAnimations.remove(controller);
-          controller.dispose();
-        }
-
-        if (mounted) {
-          setState(() {});
-        }
-      } catch (e) {
-        debugPrint('Animation error: $e');
-        for (var child in node.children) {
-          child.isAnimating = false;
-          child.position = child.targetPosition;
-        }
-        _activeAnimations.remove(controller);
-        controller.dispose();
-      }
-    });
-
-    controller.forward().catchError((error) {
-      debugPrint('Animation start error: $error');
-      _activeAnimations.remove(controller);
-      controller.dispose();
-    });
-  }
-
-  void _setAllDescendantsAnimating(MindMapNode node, bool isAnimating) {
-    for (var child in node.children) {
-      child.isAnimating = isAnimating;
-      _setAllDescendantsAnimating(child, isAnimating);
-    }
-  }
-
-  void _animateChildrenCollapse(MindMapNode node) {
-    if (!mounted || node.children.isEmpty) return;
-
-    final controller = AnimationController(
-      duration: widget.style.animationDuration,
-      vsync: this,
-    );
-
-    _activeAnimations.add(controller);
-
-    final animation = CurvedAnimation(
-      parent: controller,
-      curve: widget.style.animationCurve,
-    );
-
-    final startPositions = <String, Offset>{};
-    for (var child in node.children) {
-      startPositions[child.id] = child.position;
-    }
-
-    controller.addListener(() {
-      if (!mounted) return;
-
-      final progress = animation.value;
-
-      try {
-        for (var child in node.children) {
-          if (child.isAnimating) {
-            final startPos = startPositions[child.id];
-            if (startPos != null) {
-              child.position = Offset.lerp(startPos, node.position, progress)!;
-            }
-          }
-        }
-
-        if (progress >= 1.0) {
-          _setAllDescendantsAnimating(node, false);
-          for (var child in node.children) {
-            child.hasFixedPosition = false;
-            child.position = node.position;
-          }
-          _activeAnimations.remove(controller);
-          controller.dispose();
-          _calculateCanvasAndLayout();
-        }
-
-        if (mounted) {
-          setState(() {});
-        }
-      } catch (e) {
-        debugPrint('Collapse animation error: $e');
-        _setAllDescendantsAnimating(node, false);
-        for (var child in node.children) {
-          child.hasFixedPosition = false;
-          child.position = node.position;
-        }
-        _activeAnimations.remove(controller);
-        controller.dispose();
-        _calculateCanvasAndLayout();
-      }
-    });
-
-    controller.forward().catchError((error) {
-      debugPrint('Collapse animation start error: $error');
-      _activeAnimations.remove(controller);
-      controller.dispose();
-    });
   }
 
   /// 노드 선택 / Select node
