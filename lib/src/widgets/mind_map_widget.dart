@@ -981,32 +981,106 @@ class _MindMapWidgetState extends State<MindMapWidget>
     if (node.children.isEmpty || !mounted) return;
 
     HapticFeedback.lightImpact();
-
-    // 🎯 노드 토글 상태 설정
     _isTogglingNode = true;
 
-    setState(() {
-      node.isExpanded = !node.isExpanded;
-
-      if (node.isExpanded) {
+    if (!node.isExpanded) {
+      setState(() {
+        node.isExpanded = true;
         try {
           _calculateCanvasAndLayout();
 
-          for (var child in node.children) {
+          // Collect all visible descendants (including children, grandchildren, etc.)
+          final allVisibleDescendants =
+              _collectAllVisibleNodes(node).where((n) => n != node).toList();
+
+          // Set all descendants' positions to the parent node's position and mark as animating
+          for (var child in allVisibleDescendants) {
             child.position = node.position;
             child.isAnimating = true;
           }
 
-          _animateChildren(node);
+          // Animate all descendants to their target positions
+          _animateDescendantsExpansion(node, allVisibleDescendants);
         } catch (e) {
           debugPrint('Toggle error: $e');
           node.isExpanded = false;
         }
-      } else {
-        _setAllDescendantsAnimating(node, true);
-        _animateChildrenCollapse(node);
+      });
+    } else {
+      // Collapse: animate all visible descendants to the parent position, then collapse
+      final allVisibleDescendants =
+          _collectAllVisibleNodes(node).where((n) => n != node).toList();
+
+      final startPositions = <String, Offset>{};
+      for (var child in allVisibleDescendants) {
+        startPositions[child.id] = child.position;
+        child.isAnimating = true;
       }
-    });
+
+      final controller = AnimationController(
+        duration: widget.style.animationDuration,
+        vsync: this,
+      );
+      _activeAnimations.add(controller);
+
+      final animation = CurvedAnimation(
+        parent: controller,
+        curve: widget.style.animationCurve,
+      );
+
+      controller.addListener(() {
+        if (!mounted) return;
+        final progress = animation.value;
+        try {
+          for (var child in allVisibleDescendants) {
+            if (child.isAnimating) {
+              final startPos = startPositions[child.id];
+              if (startPos != null) {
+                // Animate from current position to parent node's position
+                child.position =
+                    Offset.lerp(startPos, node.position, progress)!;
+              }
+            }
+          }
+          if (mounted) setState(() {});
+        } catch (e) {
+          debugPrint('Collapse animation error: $e');
+        }
+      });
+
+      controller.addStatusListener((status) {
+        if (status == AnimationStatus.completed ||
+            status == AnimationStatus.dismissed) {
+          for (var child in allVisibleDescendants) {
+            child.isAnimating = false;
+            child.position = node.position;
+          }
+          _activeAnimations.remove(controller);
+          controller.dispose();
+
+          // Collapse after animation
+          if (mounted) {
+            setState(() {
+              node.isExpanded = false;
+              _calculateCanvasAndLayout();
+            });
+          }
+        }
+      });
+
+      controller.forward().catchError((error) {
+        debugPrint('Collapse animation start error: $error');
+        _activeAnimations.remove(controller);
+        controller.dispose();
+        // Fallback: collapse immediately
+        if (mounted) {
+          setState(() {
+            node.isExpanded = false;
+            _calculateCanvasAndLayout();
+          });
+        }
+      });
+    }
 
     // 🎯 노드 확장 시 카메라 동작 설정에 따라 처리
     _handleNodeExpandCamera(node);
@@ -1394,6 +1468,67 @@ class _MindMapWidgetState extends State<MindMapWidget>
     }
 
     return Rect.fromLTRB(minX, minY, maxX, maxY);
+  }
+
+  /// Animate all visible descendants from parent position to their target positions
+  void _animateDescendantsExpansion(
+    MindMapNode node,
+    List<MindMapNode> descendants,
+  ) {
+    if (!mounted || descendants.isEmpty) return;
+
+    final controller = AnimationController(
+      duration: widget.style.animationDuration,
+      vsync: this,
+    );
+    _activeAnimations.add(controller);
+
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: widget.style.animationCurve,
+    );
+
+    final startPositions = <String, Offset>{};
+    for (var child in descendants) {
+      startPositions[child.id] = node.position;
+    }
+
+    controller.addListener(() {
+      if (!mounted) return;
+      final progress = animation.value;
+      try {
+        for (var child in descendants) {
+          if (child.isAnimating) {
+            final startPos = startPositions[child.id];
+            if (startPos != null) {
+              child.position =
+                  Offset.lerp(startPos, child.targetPosition, progress)!;
+            }
+          }
+        }
+        if (mounted) setState(() {});
+      } catch (e) {
+        debugPrint('Expansion animation error: $e');
+      }
+    });
+
+    controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed ||
+          status == AnimationStatus.dismissed) {
+        for (var child in descendants) {
+          child.isAnimating = false;
+          child.position = child.targetPosition;
+        }
+        _activeAnimations.remove(controller);
+        controller.dispose();
+      }
+    });
+
+    controller.forward().catchError((error) {
+      debugPrint('Expansion animation start error: $error');
+      _activeAnimations.remove(controller);
+      controller.dispose();
+    });
   }
 
   @override

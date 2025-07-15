@@ -179,7 +179,7 @@ class _TestScreenState extends State<TestScreen> {
                   isNodesCollapsed: false, // 모든 노드 펼쳐져 있음
                   nodeExpandCameraBehavior: expandBehavior,
                   onNodeTap: (node) {
-                    print('탭된 노드: ${node.title} (${node.id})');
+                    debugPrint('탭된 노드: ${node.title} (${node.id})');
                     setState(() {
                       lastAction = '노드 탭: ${node.title}';
                     });
