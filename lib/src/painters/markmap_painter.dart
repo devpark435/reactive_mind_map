@@ -94,7 +94,7 @@ class MarkmapPainter extends CustomPainter {
   ) {
     final isSelected = selectedNodeId == node.id;
     final fontSize = _getFontSize(level);
-    final textHeight = _textHeight(node.title, level);
+    // final textHeight = _textHeight(node.title, level);
     final subtreeHeight = _subtreeHeight(node, level);
 
     // 자식 노드 y 시작점 계산

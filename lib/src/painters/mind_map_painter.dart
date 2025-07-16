@@ -131,62 +131,62 @@ class MindMapPainter extends CustomPainter {
     }
   }
 
-  void _drawSmoothCollapsingCurve(
-    Canvas canvas,
-    MindMapNode parent,
-    MindMapNode child,
-    Paint paint,
-  ) {
-    final path = Path();
-    final connectionPoints = _getConnectionPoints(parent, child);
-    final startPoint = connectionPoints['start']!;
-    final endPoint = connectionPoints['end']!;
+  // void _drawSmoothCollapsingCurve(
+  //   Canvas canvas,
+  //   MindMapNode parent,
+  //   MindMapNode child,
+  //   Paint paint,
+  // ) {
+  //   final path = Path();
+  //   final connectionPoints = _getConnectionPoints(parent, child);
+  //   final startPoint = connectionPoints['start']!;
+  //   final endPoint = connectionPoints['end']!;
 
-    path.moveTo(startPoint.dx, startPoint.dy);
+  //   path.moveTo(startPoint.dx, startPoint.dy);
 
-    final distance = (child.position - parent.position).distance;
-    final maxDistance = 200.0;
-    final progress = (distance / maxDistance).clamp(0.0, 1.0);
+  //   final distance = (child.position - parent.position).distance;
+  //   final maxDistance = 200.0;
+  //   final progress = (distance / maxDistance).clamp(0.0, 1.0);
 
-    final controlOffset = 40.0 * progress;
+  //   final controlOffset = 40.0 * progress;
 
-    final direction = _getConnectionDirection(startPoint, endPoint);
-    Offset control1, control2;
+  //   final direction = _getConnectionDirection(startPoint, endPoint);
+  //   Offset control1, control2;
 
-    switch (direction) {
-      case 'right':
-        control1 = Offset(startPoint.dx + controlOffset, startPoint.dy);
-        control2 = Offset(endPoint.dx - controlOffset * 0.5, endPoint.dy);
-        break;
-      case 'left':
-        control1 = Offset(startPoint.dx - controlOffset, startPoint.dy);
-        control2 = Offset(endPoint.dx + controlOffset * 0.5, endPoint.dy);
-        break;
-      case 'top':
-        control1 = Offset(startPoint.dx, startPoint.dy - controlOffset);
-        control2 = Offset(endPoint.dx, endPoint.dy + controlOffset * 0.5);
-        break;
-      case 'bottom':
-        control1 = Offset(startPoint.dx, startPoint.dy + controlOffset);
-        control2 = Offset(endPoint.dx, endPoint.dy - controlOffset * 0.5);
-        break;
-      default:
-        final midPoint = Offset.lerp(startPoint, endPoint, 0.5)!;
-        control1 = Offset.lerp(startPoint, midPoint, 0.5)!;
-        control2 = Offset.lerp(midPoint, endPoint, 0.5)!;
-    }
+  //   switch (direction) {
+  //     case 'right':
+  //       control1 = Offset(startPoint.dx + controlOffset, startPoint.dy);
+  //       control2 = Offset(endPoint.dx - controlOffset * 0.5, endPoint.dy);
+  //       break;
+  //     case 'left':
+  //       control1 = Offset(startPoint.dx - controlOffset, startPoint.dy);
+  //       control2 = Offset(endPoint.dx + controlOffset * 0.5, endPoint.dy);
+  //       break;
+  //     case 'top':
+  //       control1 = Offset(startPoint.dx, startPoint.dy - controlOffset);
+  //       control2 = Offset(endPoint.dx, endPoint.dy + controlOffset * 0.5);
+  //       break;
+  //     case 'bottom':
+  //       control1 = Offset(startPoint.dx, startPoint.dy + controlOffset);
+  //       control2 = Offset(endPoint.dx, endPoint.dy - controlOffset * 0.5);
+  //       break;
+  //     default:
+  //       final midPoint = Offset.lerp(startPoint, endPoint, 0.5)!;
+  //       control1 = Offset.lerp(startPoint, midPoint, 0.5)!;
+  //       control2 = Offset.lerp(midPoint, endPoint, 0.5)!;
+  //   }
 
-    path.cubicTo(
-      control1.dx,
-      control1.dy,
-      control2.dx,
-      control2.dy,
-      endPoint.dx,
-      endPoint.dy,
-    );
+  //   path.cubicTo(
+  //     control1.dx,
+  //     control1.dy,
+  //     control2.dx,
+  //     control2.dy,
+  //     endPoint.dx,
+  //     endPoint.dy,
+  //   );
 
-    canvas.drawPath(path, paint);
-  }
+  //   canvas.drawPath(path, paint);
+  // }
 
   /// 곡선 연결선 그리기
   void _drawCurvedConnection(

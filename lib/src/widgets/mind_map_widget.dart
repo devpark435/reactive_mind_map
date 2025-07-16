@@ -8,7 +8,7 @@ import '../models/mind_map_node.dart';
 import '../enums/mind_map_layout.dart';
 import '../enums/node_shape.dart';
 import '../enums/camera_focus.dart';
-import '../enums/mind_map_type.dart';
+// import '../enums/mind_map_type.dart';
 import '../painters/mind_map_painter.dart';
 import '../painters/node_painter.dart';
 // import 'markmap_widget.dart'; // 개발 중
@@ -308,7 +308,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
     // 여백 계산 (노드 크기와 레벨 간격을 고려)
     final nodeMargin = widget.style.nodeMargin;
-    final levelSpacing = widget.style.levelSpacing;
+    // final levelSpacing = widget.style.levelSpacing;
 
     // 최소 여백 (노드 크기의 50% 또는 100px 중 큰 값)
     final minMargin = math.max(maxNodeWidth * 0.5, 100.0);
