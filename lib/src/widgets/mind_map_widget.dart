@@ -8,8 +8,10 @@ import '../models/mind_map_node.dart';
 import '../enums/mind_map_layout.dart';
 import '../enums/node_shape.dart';
 import '../enums/camera_focus.dart';
+import '../enums/mind_map_type.dart';
 import '../painters/mind_map_painter.dart';
 import '../painters/node_painter.dart';
+// import 'markmap_widget.dart'; // 개발 중
 
 /// 커스터마이징 가능한 마인드맵 위젯 / Customizable mind map widget
 class MindMapWidget extends StatefulWidget {
@@ -67,6 +69,16 @@ class MindMapWidget extends StatefulWidget {
   /// 노드 확장 시 카메라 동작 / Camera behavior when expanding nodes
   final NodeExpandCameraBehavior nodeExpandCameraBehavior;
 
+  /// 커스텀 노드 빌더 / Custom node builder
+  final Widget Function(
+    MindMapNode node,
+    bool isSelected,
+    VoidCallback onTap,
+    VoidCallback onLongPress,
+    VoidCallback onDoubleTap,
+  )?
+  customNodeBuilder;
+
   const MindMapWidget({
     super.key,
     required this.data,
@@ -87,6 +99,7 @@ class MindMapWidget extends StatefulWidget {
     this.focusAnimation = const Duration(milliseconds: 300),
     this.focusMargin = const EdgeInsets.all(20),
     this.nodeExpandCameraBehavior = NodeExpandCameraBehavior.none,
+    this.customNodeBuilder,
   });
 
   @override
@@ -1533,6 +1546,16 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
   @override
   Widget build(BuildContext context) {
+    // 마크맵 타입이면 전용 위젯 사용 (개발 중)
+    // if (widget.style.mindMapType == MindMapType.markmap) {
+    //   return MarkmapWidget(
+    //     data: widget.data,
+    //     style: widget.style,
+    //     onNodeTap: widget.onNodeTap,
+    //     onNodeLongPress: widget.onNodeLongPress,
+    //   );
+    // }
+
     final canvasSize =
         widget.canvasSize ??
         Size(_actualCanvasSize.width, _actualCanvasSize.height);
@@ -1615,8 +1638,73 @@ class _MindMapWidgetState extends State<MindMapWidget>
       customSize: node.size,
       customTextStyle: node.textStyle,
     );
-    final textSize = widget.style.getTextSize(node.level);
 
+    // 스타일의 노드 빌더가 있으면 우선 사용
+    if (widget.style.nodeBuilder != null) {
+      return Positioned(
+        key: ValueKey('positioned_${node.id}'),
+        left: node.position.dx - actualSize.width / 2,
+        top: node.position.dy - actualSize.height / 2,
+        child: widget.style.nodeBuilder!(
+          node,
+          isSelected,
+          () {
+            if (node.hasChildren) {
+              _toggleNode(node);
+            } else {
+              _selectNode(node);
+            }
+          },
+          () {
+            final originalData = _findOriginalData(node.id);
+            if (originalData != null) {
+              widget.onNodeLongPress?.call(originalData);
+            }
+          },
+          () {
+            final originalData = _findOriginalData(node.id);
+            if (originalData != null) {
+              widget.onNodeDoubleTap?.call(originalData);
+            }
+          },
+        ),
+      );
+    }
+
+    // 커스텀 노드 빌더가 있으면 사용
+    if (widget.customNodeBuilder != null) {
+      return Positioned(
+        key: ValueKey('positioned_${node.id}'),
+        left: node.position.dx - actualSize.width / 2,
+        top: node.position.dy - actualSize.height / 2,
+        child: widget.customNodeBuilder!(
+          node,
+          isSelected,
+          () {
+            if (node.hasChildren) {
+              _toggleNode(node);
+            } else {
+              _selectNode(node);
+            }
+          },
+          () {
+            final originalData = _findOriginalData(node.id);
+            if (originalData != null) {
+              widget.onNodeLongPress?.call(originalData);
+            }
+          },
+          () {
+            final originalData = _findOriginalData(node.id);
+            if (originalData != null) {
+              widget.onNodeDoubleTap?.call(originalData);
+            }
+          },
+        ),
+      );
+    }
+
+    // 기본 노드 빌더 사용
+    final textSize = widget.style.getTextSize(node.level);
     final nodeColor = node.color;
     final textColor = node.textColor ?? widget.style.defaultTextStyle.color;
     final borderColor =

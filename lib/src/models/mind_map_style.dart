@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import '../enums/mind_map_layout.dart';
 import '../enums/node_shape.dart';
+import '../enums/mind_map_type.dart';
+import '../models/mind_map_node.dart';
 import 'dart:math' as math;
 
 /// 마인드맵의 전체적인 스타일을 정의하는 클래스 / Class that defines the overall style of the mind map
 class MindMapStyle {
+  /// 마인드맵 타입 / Mind map type
+  final MindMapType mindMapType;
+
   /// 마인드맵 레이아웃 방향 / Mind map layout direction
   final MindMapLayout layout;
 
@@ -86,7 +91,33 @@ class MindMapStyle {
   /// 텍스트 패딩 / Text padding
   final EdgeInsets textPadding;
 
+  /// 커스텀 노드 최대 너비 / Maximum width for custom nodes
+  final double maxCustomNodeWidth;
+
+  /// 커스텀 노드 최대 높이 / Maximum height for custom nodes
+  final double maxCustomNodeHeight;
+
+  /// 커스텀 노드 최소 너비 / Minimum width for custom nodes
+  final double minCustomNodeWidth;
+
+  /// 커스텀 노드 최소 높이 / Minimum height for custom nodes
+  final double minCustomNodeHeight;
+
+  /// 커스텀 노드 크기 자동 조정 여부 / Whether to auto-adjust custom node size
+  final bool enableCustomNodeAutoSizing;
+
+  /// 노드 빌더 함수 / Node builder function
+  final Widget Function(
+    MindMapNode,
+    bool,
+    VoidCallback,
+    VoidCallback,
+    VoidCallback,
+  )?
+  nodeBuilder;
+
   const MindMapStyle({
+    this.mindMapType = MindMapType.default_,
     this.layout = MindMapLayout.right,
     this.nodeShape = NodeShape.roundedRectangle,
     this.backgroundColor = const Color(0xFFF8FAFC),
@@ -131,10 +162,17 @@ class MindMapStyle {
     this.maxNodeWidth = 200.0,
     this.minNodeHeight = 40.0,
     this.textPadding = const EdgeInsets.all(12.0),
+    this.maxCustomNodeWidth = 200.0,
+    this.maxCustomNodeHeight = 150.0,
+    this.minCustomNodeWidth = 60.0,
+    this.minCustomNodeHeight = 40.0,
+    this.enableCustomNodeAutoSizing = true,
+    this.nodeBuilder,
   });
 
   /// 스타일 복사를 위한 copyWith 메소드 / copyWith method for style copying
   MindMapStyle copyWith({
+    MindMapType? mindMapType,
     MindMapLayout? layout,
     NodeShape? nodeShape,
     Color? backgroundColor,
@@ -162,8 +200,22 @@ class MindMapStyle {
     double? maxNodeWidth,
     double? minNodeHeight,
     EdgeInsets? textPadding,
+    double? maxCustomNodeWidth,
+    double? maxCustomNodeHeight,
+    double? minCustomNodeWidth,
+    double? minCustomNodeHeight,
+    bool? enableCustomNodeAutoSizing,
+    Widget Function(
+      MindMapNode,
+      bool,
+      VoidCallback,
+      VoidCallback,
+      VoidCallback,
+    )?
+    nodeBuilder,
   }) {
     return MindMapStyle(
+      mindMapType: mindMapType ?? this.mindMapType,
       layout: layout ?? this.layout,
       nodeShape: nodeShape ?? this.nodeShape,
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -192,6 +244,13 @@ class MindMapStyle {
       maxNodeWidth: maxNodeWidth ?? this.maxNodeWidth,
       minNodeHeight: minNodeHeight ?? this.minNodeHeight,
       textPadding: textPadding ?? this.textPadding,
+      maxCustomNodeWidth: maxCustomNodeWidth ?? this.maxCustomNodeWidth,
+      maxCustomNodeHeight: maxCustomNodeHeight ?? this.maxCustomNodeHeight,
+      minCustomNodeWidth: minCustomNodeWidth ?? this.minCustomNodeWidth,
+      minCustomNodeHeight: minCustomNodeHeight ?? this.minCustomNodeHeight,
+      enableCustomNodeAutoSizing:
+          enableCustomNodeAutoSizing ?? this.enableCustomNodeAutoSizing,
+      nodeBuilder: nodeBuilder ?? this.nodeBuilder,
     );
   }
 
@@ -201,6 +260,58 @@ class MindMapStyle {
     if (level == 1) return primaryNodeSize;
     return leafNodeSize;
   }
+
+  /// 커스텀 노드 크기를 제한 범위 내로 조정 / Adjust custom node size within limits
+  Size adjustCustomNodeSize(Size originalSize, {String? title, int? level}) {
+    if (!enableCustomNodeAutoSizing) {
+      return originalSize;
+    }
+
+    double adjustedWidth = originalSize.width;
+    double adjustedHeight = originalSize.height;
+
+    // 최소/최대 크기 제한 적용
+    adjustedWidth = adjustedWidth.clamp(minCustomNodeWidth, maxCustomNodeWidth);
+    adjustedHeight = adjustedHeight.clamp(
+      minCustomNodeHeight,
+      maxCustomNodeHeight,
+    );
+
+    // 텍스트 길이에 따른 동적 조정
+    if (title != null) {
+      final textLength = title.length;
+      final fontSize =
+          level == 0
+              ? 18.0
+              : level == 1
+              ? 15.0
+              : 12.0;
+      final estimatedTextWidth = textLength * fontSize * 0.6;
+      final minWidthForText = estimatedTextWidth + 20; // 패딩 포함
+
+      if (adjustedWidth < minWidthForText) {
+        adjustedWidth = minWidthForText.clamp(
+          minCustomNodeWidth,
+          maxCustomNodeWidth,
+        );
+      }
+    }
+
+    return Size(adjustedWidth, adjustedHeight);
+  }
+
+  // /// 마크맵 스타일 마인드맵을 위한 전용 스타일 생성 / Create dedicated style for markmap type mind map
+  // MindMapStyle getMarkmapStyle() {
+  //   return copyWith(
+  //     mindMapType: MindMapType.markmap,
+  //     connectionWidth: 2.0,
+  //     connectionColor: Colors.grey[600]!,
+  //     useCustomCurve: true,
+  //     backgroundColor: const Color(0xFFF8FAFC), // 연한 회색 배경
+  //     animationDuration: const Duration(milliseconds: 800),
+  //     animationCurve: Curves.easeOutCubic,
+  //   );
+  // }
 
   /// 노드 레벨에 따른 기본 색상을 반환 / Returns default color based on node level
   Color getDefaultNodeColor(int level) {
