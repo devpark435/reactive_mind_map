@@ -5,7 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<<<<<<< HEAD
 ## [1.2.0] - 2025-07-16
+=======
+## [1.3.0] - 2025-01-27
+
+### 🔧 Simplified Custom Node Builder API
+- **Removed Widget-Level Custom Node Builder**: Eliminated `customNodeBuilder` parameter from `MindMapWidget`
+  - Reduces user confusion by providing single, consistent approach
+  - All custom node customization now uses `MindMapStyle.nodeBuilder`
+  - Simplified API design for better maintainability
+>>>>>>> 3e493deeae3a3e730b1536a562fa57b5e26f5748
 
 ### 🎯 Enhanced User Experience
 - **Unified Custom Node Approach**: Single `nodeBuilder` property in `MindMapStyle`
@@ -22,7 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fixed API confusion**: Eliminated duplicate functionality between style and widget levels
 - **Improved code clarity**: Single source of truth for custom node builders
 
+<<<<<<< HEAD
 ## [1.2.0] - 2025-07-16
+=======
+## [1.2.0] - 2025-01-27
+>>>>>>> 3e493deeae3a3e730b1536a562fa57b5e26f5748
 
 ### 🎯 New Features
 - **Widget-Level Custom Node Builder**: Added `customNodeBuilder` parameter to `MindMapWidget`
