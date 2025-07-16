@@ -57,7 +57,6 @@ class _MyHomePageState extends State<MyHomePage> {
         style: _getStyleForNodeType(_selectedNodeType),
         onNodeTap: _handleNodeTap,
         onNodeLongPress: _handleNodeLongPress,
-        customNodeBuilder: _getWidgetLevelNodeBuilder(_selectedNodeType),
       ),
       floatingActionButton: _buildInfoButton(),
     );
@@ -471,18 +470,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  // MARK: - 위젯 레벨 노드 빌더 (스타일과 독립적으로 사용)
-
-  Widget Function(MindMapNode, bool, VoidCallback, VoidCallback, VoidCallback)?
-  _getWidgetLevelNodeBuilder(NodeType type) {
-    switch (type) {
-      case NodeType.basic:
-        return null; // 기본 노드는 스타일의 기본 빌더 사용
-      case NodeType.custom:
-        return _buildWidgetCustomNode; // 위젯 커스텀만 위젯 레벨 빌더 사용
-    }
-  }
-
   // MARK: - 스타일 정의
 
   MindMapStyle _getBasicStyle() {
@@ -536,12 +523,12 @@ class _MyHomePageState extends State<MyHomePage> {
       backgroundColor: Colors.grey[50]!,
       levelSpacing: 160,
       nodeMargin: 15,
+      nodeBuilder: _buildStyleLevelCustomNode, // 스타일 레벨에서 노드 빌더 설정
     );
   }
 
-  // MARK: - 위젯 레벨 커스텀 노드 빌더 (카드 스타일)
-
-  Widget _buildWidgetCustomNode(
+  // MARK: - 스타일 레벨 커스텀 노드 빌더 (스타일에 포함된 버전)
+  Widget _buildStyleLevelCustomNode(
     MindMapNode node,
     bool isSelected,
     VoidCallback onTap,
@@ -571,55 +558,61 @@ class _MyHomePageState extends State<MyHomePage> {
         height: actualSize.height,
         decoration: BoxDecoration(
           color: node.color,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _getPriorityColor(priority), width: 3),
+          borderRadius: BorderRadius.circular(12), // 스타일 버전은 더 둥근 모서리
+          border: Border.all(
+            color: _getPriorityColor(priority),
+            width: 2,
+          ), // 더 얇은 테두리
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: .1),
-              blurRadius: 4,
+              color: Colors.black.withValues(alpha: .15),
+              blurRadius: 6,
               spreadRadius: 1,
               offset: const Offset(0, 2),
             ),
             if (isSelected)
               BoxShadow(
-                color: Colors.yellow.withValues(alpha: .6),
-                blurRadius: 8,
-                spreadRadius: 2,
+                color: Colors.yellow.withValues(alpha: .5),
+                blurRadius: 6,
+                spreadRadius: 1,
               ),
           ],
         ),
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.all(isSmallNode ? 4.0 : 8.0),
+            padding: EdgeInsets.all(isSmallNode ? 4.0 : 6.0), // 더 작은 패딩
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min, // 최소 크기로 제한
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // 아이콘과 우선순위 태그
                 if (!isSmallNode) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min, // 최소 크기로 제한
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(icon, style: const TextStyle(fontSize: 14)),
+                      Text(
+                        icon,
+                        style: const TextStyle(fontSize: 12),
+                      ), // 더 작은 아이콘
                       if (canShowPriority) ...[
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 3),
                         Flexible(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 2,
+                              horizontal: 3,
+                              vertical: 1,
                             ),
                             decoration: BoxDecoration(
                               color: _getPriorityColor(
                                 priority,
-                              ).withValues(alpha: .2),
-                              borderRadius: BorderRadius.circular(4),
+                              ).withValues(alpha: .15),
+                              borderRadius: BorderRadius.circular(3),
                             ),
                             child: Text(
                               priority.toUpperCase(),
                               style: TextStyle(
-                                fontSize: 8,
+                                fontSize: 7,
                                 fontWeight: FontWeight.bold,
                                 color: _getPriorityColor(priority),
                               ),
@@ -631,18 +624,17 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                 ] else ...[
-                  // 작은 노드는 아이콘만 표시
-                  Text(icon, style: const TextStyle(fontSize: 12)),
-                  const SizedBox(height: 2),
+                  Text(icon, style: const TextStyle(fontSize: 10)),
+                  const SizedBox(height: 1),
                 ],
                 // 제목 텍스트
                 Flexible(
                   child: Text(
                     node.title,
                     style: TextStyle(
-                      fontSize: isSmallNode ? 9 : 11,
+                      fontSize: isSmallNode ? 8 : 10, // 더 작은 폰트
                       fontWeight: FontWeight.bold,
                       color: node.textColor ?? Colors.white,
                     ),
