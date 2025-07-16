@@ -162,78 +162,301 @@ class _MyHomePageState extends State<MyHomePage> {
   MindMapData _getUnifiedData() {
     return MindMapData(
       id: 'root',
-      title: '마인드맵 데모',
-      description: '다양한 노드 타입 비교',
+      title: '프로젝트 관리 시스템',
+      description: '완전한 프로젝트 생명주기',
       color: const Color(0xFF3B82F6),
       textColor: Colors.white,
-      size: const Size(140, 80),
+      size: const Size(160, 90),
       children: [
         MindMapData(
           id: 'planning',
           title: '기획 단계',
-          description: '프로젝트 기획',
+          description: '프로젝트 기획 및 설계',
           color: const Color(0xFF10B981),
           textColor: Colors.white,
-          size: const Size(120, 70),
+          size: const Size(140, 80),
           customData: {'icon': '📝', 'priority': 'high'},
           children: [
             MindMapData(
               id: 'planning-1',
               title: '요구사항 분석',
-              description: '사용자 니즈 파악',
+              description: '사용자 니즈 파악 및 분석',
               color: const Color(0xFF059669),
               textColor: Colors.white,
-              size: const Size(100, 60),
+              size: const Size(120, 70),
               customData: {'icon': '🔍', 'department': 'PM'},
+              children: [
+                MindMapData(
+                  id: 'planning-1-1',
+                  title: '사용자 인터뷰',
+                  description: '직접 사용자와의 면담',
+                  color: const Color(0xFF047857),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '👥', 'method': 'interview'},
+                ),
+                MindMapData(
+                  id: 'planning-1-2',
+                  title: '시장 조사',
+                  description: '경쟁사 및 시장 분석',
+                  color: const Color(0xFF065F46),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '📊', 'method': 'research'},
+                ),
+              ],
             ),
             MindMapData(
               id: 'planning-2',
               title: '기능 정의',
-              description: '핵심 기능 설계',
+              description: '핵심 기능 및 요구사항 정의',
               color: const Color(0xFF047857),
               textColor: Colors.white,
-              size: const Size(100, 60),
+              size: const Size(120, 70),
               customData: {'icon': '⚙️', 'department': 'UX'},
+              children: [
+                MindMapData(
+                  id: 'planning-2-1',
+                  title: '사용자 스토리',
+                  description: '사용자 관점의 기능 정의',
+                  color: const Color(0xFF065F46),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '📖', 'type': 'story'},
+                ),
+                MindMapData(
+                  id: 'planning-2-2',
+                  title: '기능 명세서',
+                  description: '상세한 기능 명세 작성',
+                  color: const Color(0xFF064E3B),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '📋', 'type': 'spec'},
+                ),
+              ],
+            ),
+            MindMapData(
+              id: 'planning-3',
+              title: '아키텍처 설계',
+              description: '시스템 아키텍처 설계',
+              color: const Color(0xFF065F46),
+              textColor: Colors.white,
+              size: const Size(120, 70),
+              customData: {'icon': '🏗️', 'department': 'Architecture'},
             ),
           ],
         ),
         MindMapData(
           id: 'development',
           title: '개발 단계',
-          description: '실제 구현',
+          description: '실제 코드 구현',
           color: const Color(0xFFF59E0B),
           textColor: Colors.white,
-          size: const Size(120, 70),
+          size: const Size(140, 80),
           customData: {'icon': '💻', 'priority': 'medium'},
           children: [
             MindMapData(
               id: 'development-1',
               title: '프론트엔드',
-              description: '사용자 인터페이스',
+              description: '사용자 인터페이스 개발',
               color: const Color(0xFFDC2626),
               textColor: Colors.white,
-              size: const Size(100, 60),
+              size: const Size(120, 70),
               customData: {'icon': '🖥️', 'tech': 'Flutter'},
+              children: [
+                MindMapData(
+                  id: 'development-1-1',
+                  title: 'UI 컴포넌트',
+                  description: '재사용 가능한 UI 컴포넌트',
+                  color: const Color(0xFFB91C1C),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '🧩', 'type': 'component'},
+                ),
+                MindMapData(
+                  id: 'development-1-2',
+                  title: '페이지 구현',
+                  description: '각 페이지별 화면 구현',
+                  color: const Color(0xFF991B1B),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '📄', 'type': 'page'},
+                ),
+                MindMapData(
+                  id: 'development-1-3',
+                  title: '상태 관리',
+                  description: '애플리케이션 상태 관리',
+                  color: const Color(0xFF7F1D1D),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '🔄', 'type': 'state'},
+                ),
+              ],
             ),
             MindMapData(
               id: 'development-2',
               title: '백엔드',
-              description: '서버 로직',
+              description: '서버 로직 및 API 개발',
               color: const Color(0xFF7C3AED),
               textColor: Colors.white,
-              size: const Size(100, 60),
+              size: const Size(120, 70),
               customData: {'icon': '⚙️', 'tech': 'Node.js'},
+              children: [
+                MindMapData(
+                  id: 'development-2-1',
+                  title: 'API 엔드포인트',
+                  description: 'RESTful API 구현',
+                  color: const Color(0xFF6D28D9),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '🔗', 'type': 'api'},
+                ),
+                MindMapData(
+                  id: 'development-2-2',
+                  title: '데이터베이스',
+                  description: '데이터베이스 설계 및 구현',
+                  color: const Color(0xFF5B21B6),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '🗄️', 'type': 'database'},
+                ),
+                MindMapData(
+                  id: 'development-2-3',
+                  title: '인증 시스템',
+                  description: '사용자 인증 및 권한 관리',
+                  color: const Color(0xFF4C1D95),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '🔐', 'type': 'auth'},
+                ),
+              ],
+            ),
+            MindMapData(
+              id: 'development-3',
+              title: 'DevOps',
+              description: '배포 및 인프라 관리',
+              color: const Color(0xFF059669),
+              textColor: Colors.white,
+              size: const Size(120, 70),
+              customData: {'icon': '🚀', 'tech': 'Docker'},
+              children: [
+                MindMapData(
+                  id: 'development-3-1',
+                  title: 'CI/CD 파이프라인',
+                  description: '지속적 통합 및 배포',
+                  color: const Color(0xFF047857),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '⚡', 'type': 'pipeline'},
+                ),
+                MindMapData(
+                  id: 'development-3-2',
+                  title: '모니터링',
+                  description: '시스템 모니터링 및 로깅',
+                  color: const Color(0xFF065F46),
+                  textColor: Colors.white,
+                  size: const Size(110, 60),
+                  customData: {'icon': '📊', 'type': 'monitoring'},
+                ),
+              ],
             ),
           ],
         ),
         MindMapData(
           id: 'testing',
           title: '테스트 단계',
-          description: '품질 보증',
+          description: '품질 보증 및 테스트',
           color: const Color(0xFF8B5CF6),
           textColor: Colors.white,
-          size: const Size(120, 70),
+          size: const Size(140, 80),
           customData: {'icon': '🧪', 'priority': 'low'},
+          children: [
+            MindMapData(
+              id: 'testing-1',
+              title: '단위 테스트',
+              description: '개별 컴포넌트 테스트',
+              color: const Color(0xFF7C3AED),
+              textColor: Colors.white,
+              size: const Size(120, 70),
+              customData: {'icon': '🔬', 'type': 'unit'},
+            ),
+            MindMapData(
+              id: 'testing-2',
+              title: '통합 테스트',
+              description: '시스템 통합 테스트',
+              color: const Color(0xFF6D28D9),
+              textColor: Colors.white,
+              size: const Size(120, 70),
+              customData: {'icon': '🔗', 'type': 'integration'},
+            ),
+            MindMapData(
+              id: 'testing-3',
+              title: '사용자 테스트',
+              description: '실제 사용자 환경 테스트',
+              color: const Color(0xFF5B21B6),
+              textColor: Colors.white,
+              size: const Size(120, 70),
+              customData: {'icon': '👥', 'type': 'user'},
+            ),
+          ],
+        ),
+        MindMapData(
+          id: 'deployment',
+          title: '배포 단계',
+          description: '프로덕션 환경 배포',
+          color: const Color(0xFFEF4444),
+          textColor: Colors.white,
+          size: const Size(140, 80),
+          customData: {'icon': '🚀', 'priority': 'high'},
+          children: [
+            MindMapData(
+              id: 'deployment-1',
+              title: '스테이징 배포',
+              description: '테스트 환경 배포',
+              color: const Color(0xFFDC2626),
+              textColor: Colors.white,
+              size: const Size(120, 70),
+              customData: {'icon': '🧪', 'env': 'staging'},
+            ),
+            MindMapData(
+              id: 'deployment-2',
+              title: '프로덕션 배포',
+              description: '실제 서비스 배포',
+              color: const Color(0xFFB91C1C),
+              textColor: Colors.white,
+              size: const Size(120, 70),
+              customData: {'icon': '🌐', 'env': 'production'},
+            ),
+          ],
+        ),
+        MindMapData(
+          id: 'maintenance',
+          title: '유지보수',
+          description: '지속적인 서비스 관리',
+          color: const Color(0xFF6B7280),
+          textColor: Colors.white,
+          size: const Size(140, 80),
+          customData: {'icon': '🔧', 'priority': 'medium'},
+          children: [
+            MindMapData(
+              id: 'maintenance-1',
+              title: '버그 수정',
+              description: '발견된 문제점 수정',
+              color: const Color(0xFF4B5563),
+              textColor: Colors.white,
+              size: const Size(120, 70),
+              customData: {'icon': '🐛', 'type': 'bugfix'},
+            ),
+            MindMapData(
+              id: 'maintenance-2',
+              title: '성능 최적화',
+              description: '시스템 성능 개선',
+              color: const Color(0xFF374151),
+              textColor: Colors.white,
+              size: const Size(120, 70),
+              customData: {'icon': '⚡', 'type': 'optimization'},
+            ),
+          ],
         ),
       ],
     );
@@ -245,8 +468,6 @@ class _MyHomePageState extends State<MyHomePage> {
         return _getBasicStyle();
       case NodeType.custom:
         return _getCustomStyle();
-      // case NodeType.markmap:
-      //   return MindMapStyle().getMarkmapStyle();
     }
   }
 
@@ -258,7 +479,7 @@ class _MyHomePageState extends State<MyHomePage> {
       case NodeType.basic:
         return null; // 기본 노드는 스타일의 기본 빌더 사용
       case NodeType.custom:
-        return _buildWidgetCustomNode;
+        return _buildWidgetCustomNode; // 위젯 커스텀만 위젯 레벨 빌더 사용
     }
   }
 
@@ -315,96 +536,6 @@ class _MyHomePageState extends State<MyHomePage> {
       backgroundColor: Colors.grey[50]!,
       levelSpacing: 160,
       nodeMargin: 15,
-      nodeBuilder: _buildCustomNode,
-    );
-  }
-
-  // MARK: - 커스텀 노드 빌더 (아이콘 + 설명)
-
-  Widget _buildCustomNode(
-    MindMapNode node,
-    bool isSelected,
-    VoidCallback onTap,
-    VoidCallback onLongPress,
-    VoidCallback onDoubleTap,
-  ) {
-    final icon = node.customData?['icon'] as String? ?? '📋';
-
-    final actualSize = MindMapStyle().getActualNodeSize(
-      node.title,
-      node.level,
-      customSize: node.size,
-      customTextStyle: node.textStyle,
-    );
-
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      onDoubleTap: onDoubleTap,
-      child: Container(
-        width: actualSize.width,
-        height: actualSize.height,
-        decoration: BoxDecoration(
-          color: node.color,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: node.borderColor ?? Colors.transparent,
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: .2),
-              blurRadius: 8,
-              spreadRadius: 2,
-              offset: const Offset(2, 4),
-            ),
-            if (isSelected)
-              BoxShadow(
-                color: Colors.yellow.withValues(alpha: .8),
-                blurRadius: 8,
-                spreadRadius: 2,
-              ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(icon, style: const TextStyle(fontSize: 16)),
-              const SizedBox(height: 4),
-              if (node.description != null) ...[
-                Text(
-                  node.description!,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color:
-                        node.textColor?.withValues(alpha: .8) ?? Colors.white70,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-              ],
-              Text(
-                node.title,
-                style:
-                    node.textStyle ??
-                    TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: node.textColor ?? Colors.white,
-                    ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -426,6 +557,10 @@ class _MyHomePageState extends State<MyHomePage> {
       customSize: node.size,
       customTextStyle: node.textStyle,
     );
+
+    // 노드 크기에 따른 레이아웃 결정
+    final isSmallNode = actualSize.width < 80 || actualSize.height < 50;
+    final canShowPriority = !isSmallNode && actualSize.width >= 60;
 
     return GestureDetector(
       onTap: onTap,
@@ -453,49 +588,71 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(icon, style: const TextStyle(fontSize: 14)),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getPriorityColor(priority).withValues(alpha: .2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      priority.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                        color: _getPriorityColor(priority),
-                      ),
-                    ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(isSmallNode ? 4.0 : 8.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min, // 최소 크기로 제한
+              children: [
+                // 아이콘과 우선순위 태그
+                if (!isSmallNode) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min, // 최소 크기로 제한
+                    children: [
+                      Text(icon, style: const TextStyle(fontSize: 14)),
+                      if (canShowPriority) ...[
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getPriorityColor(
+                                priority,
+                              ).withValues(alpha: .2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              priority.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                                color: _getPriorityColor(priority),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
+                  const SizedBox(height: 4),
+                ] else ...[
+                  // 작은 노드는 아이콘만 표시
+                  Text(icon, style: const TextStyle(fontSize: 12)),
+                  const SizedBox(height: 2),
                 ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                node.title,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: node.textColor ?? Colors.white,
+                // 제목 텍스트
+                Flexible(
+                  child: Text(
+                    node.title,
+                    style: TextStyle(
+                      fontSize: isSmallNode ? 9 : 11,
+                      fontWeight: FontWeight.bold,
+                      color: node.textColor ?? Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: isSmallNode ? 1 : 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -640,7 +797,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
 enum NodeType {
   basic('🧠', '기본 노드'),
-  custom('🎨', '커스텀 노드');
+  custom('⚡', '위젯 커스텀');
 
   const NodeType(this.icon, this.displayName);
   final String icon;

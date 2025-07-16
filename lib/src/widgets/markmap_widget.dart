@@ -78,7 +78,6 @@ class _MarkmapWidgetState extends State<MarkmapWidget>
   }
 
   void _handleTap(Offset tapPosition) {
-    // 가장 가까운 노드 찾기
     String? tappedNodeId;
     double minDistance = double.infinity;
 
@@ -95,7 +94,6 @@ class _MarkmapWidgetState extends State<MarkmapWidget>
         _selectedNodeId = _selectedNodeId == tappedNodeId ? null : tappedNodeId;
       });
 
-      // 노드 데이터 찾기 및 콜백 호출
       final tappedNode = _findNodeById(widget.data, tappedNodeId!);
       if (tappedNode != null && widget.onNodeTap != null) {
         widget.onNodeTap!(tappedNode);

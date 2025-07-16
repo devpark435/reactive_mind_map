@@ -371,23 +371,65 @@ class MindMapStyle {
     Size? customSize,
     TextStyle? customTextStyle,
   }) {
+    // 기본 텍스트 스타일 결정
+    final baseTextStyle =
+        customTextStyle ??
+        defaultTextStyle.copyWith(fontSize: getTextSize(level));
+
+    // 텍스트 크기 정확히 계산
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: baseTextStyle),
+      textDirection: TextDirection.ltr,
+      maxLines: 3, // 최대 3줄로 제한
+    );
+
+    // 최대 너비 제약 설정
+    final maxTextWidth = maxNodeWidth - textPadding.horizontal;
+    textPainter.layout(maxWidth: maxTextWidth);
+
+    // 텍스트 크기 + 패딩 계산
+    final textWidth = textPainter.width;
+    final textHeight = textPainter.height;
+
+    // 최소 크기 계산 (텍스트 + 패딩)
+    final minWidth = textWidth + textPadding.horizontal;
+    final minHeight = textHeight + textPadding.vertical;
+
+    // 커스텀 크기가 있는 경우
     if (customSize != null) {
-      // If auto-sizing disabled, keep custom size
       if (!enableAutoSizing) {
-        return customSize;
+        // 자동 크기 조정이 비활성화된 경우 커스텀 크기 사용
+        return Size(
+          customSize.width.clamp(minCustomNodeWidth, maxCustomNodeWidth),
+          customSize.height.clamp(minCustomNodeHeight, maxCustomNodeHeight),
+        );
+      } else {
+        // 자동 크기 조정이 활성화된 경우 더 큰 값 사용
+        final adjustedWidth = math.max(customSize.width, minWidth);
+        final adjustedHeight = math.max(customSize.height, minHeight);
+
+        return Size(
+          adjustedWidth.clamp(minCustomNodeWidth, maxCustomNodeWidth),
+          adjustedHeight.clamp(minCustomNodeHeight, maxCustomNodeHeight),
+        );
       }
-      // Otherwise, ensure node is at least large enough for content
-      final dynSize = calculateNodeSize(
-        text,
-        level,
-        customTextStyle: customTextStyle,
-      );
-      final width = math.max(customSize.width, dynSize.width);
-      final height = math.max(customSize.height, dynSize.height);
-      return Size(width, height);
     }
 
-    // No custom size: calculate size based on text
-    return calculateNodeSize(text, level, customTextStyle: customTextStyle);
+    // 커스텀 크기가 없는 경우 동적 계산
+    final calculatedSize = calculateNodeSize(
+      text,
+      level,
+      customTextStyle: customTextStyle,
+    );
+
+    // 레벨별 최소 크기 보장
+    final levelMinSize = getNodeSize(level);
+    final finalWidth = math.max(calculatedSize.width, levelMinSize * 0.8);
+    final finalHeight = math.max(calculatedSize.height, levelMinSize * 0.6);
+
+    return Size(
+      finalWidth.clamp(minNodeWidth, maxNodeWidth),
+      finalHeight.clamp(minNodeHeight, double.infinity),
+    );
   }
 }

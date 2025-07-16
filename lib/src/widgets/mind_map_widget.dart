@@ -293,6 +293,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
       maxNodeWidth = math.max(maxNodeWidth, nodeSize.width);
       maxNodeHeight = math.max(maxNodeHeight, nodeSize.height);
 
+      // 노드의 실제 경계 계산 (중심점 기준)
       final nodeLeft = node.position.dx - nodeSize.width / 2;
       final nodeRight = node.position.dx + nodeSize.width / 2;
       final nodeTop = node.position.dy - nodeSize.height / 2;
@@ -304,6 +305,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
       maxY = math.max(maxY, nodeBottom);
     }
 
+    // 축소된 노드들의 예상 경계도 고려
     final collapsedNodes = _collectAllCollapsedNodes(_rootNode);
     if (collapsedNodes.isNotEmpty) {
       final estimatedBounds = _estimateCollapsedNodesBounds(collapsedNodes);
@@ -315,22 +317,33 @@ class _MindMapWidgetState extends State<MindMapWidget>
       }
     }
 
-    final extraPaddingX = math.max(maxNodeWidth, 100.0);
-    final extraPaddingY = math.max(maxNodeHeight, 100.0);
+    // 여백 계산 (노드 크기와 레벨 간격을 고려)
+    final nodeMargin = widget.style.nodeMargin;
+    final levelSpacing = widget.style.levelSpacing;
+
+    // 최소 여백 (노드 크기의 50% 또는 100px 중 큰 값)
+    final minMargin = math.max(maxNodeWidth * 0.5, 100.0);
+    final extraPaddingX = math.max(minMargin, nodeMargin);
+    final extraPaddingY = math.max(minMargin, nodeMargin);
 
     final contentWidth = maxX - minX;
     final contentHeight = maxY - minY;
 
+    // 캔버스 패딩 + 추가 여백
     final totalPaddingX = widget.canvasPadding.horizontal + (extraPaddingX * 2);
     final totalPaddingY = widget.canvasPadding.vertical + (extraPaddingY * 2);
 
     final requiredWidth = contentWidth + totalPaddingX;
     final requiredHeight = contentHeight + totalPaddingY;
 
+    // 최소 크기 보장
     final finalWidth = math.max(requiredWidth, widget.minCanvasSize.width);
     final finalHeight = math.max(requiredHeight, widget.minCanvasSize.height);
 
-    return Size(finalWidth, finalHeight);
+    // 오버플로우 방지를 위한 추가 여백 (바텀 오버플로우 방지를 위해 더 큰 여백)
+    final safetyMarginX = 100.0;
+    final safetyMarginY = 150.0; // 바텀 오버플로우 방지를 위해 더 큰 값
+    return Size(finalWidth + safetyMarginX, finalHeight + safetyMarginY);
   }
 
   /// 모든 보이는 노드 수집 / Collect all visible nodes
@@ -1562,7 +1575,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
     final viewerOptions =
         widget.viewerOptions ?? const InteractiveViewerOptions();
 
-    // Wrap the full canvas in a RepaintBoundary if a captureKey is provided
+    // 마인드맵 콘텐츠를 스크롤뷰로 감싸서 오버플로우 방지
     final mindMapContent =
         (widget.captureKey != null)
             ? RepaintBoundary(
@@ -1570,20 +1583,40 @@ class _MindMapWidgetState extends State<MindMapWidget>
               child: Container(
                 width: canvasSize.width,
                 height: canvasSize.height,
-                color: widget.style.backgroundColor,
-                child: CustomPaint(
-                  painter: MindMapPainter(_rootNode, widget.style),
-                  child: Stack(children: _buildAllNodes(_rootNode)),
+                decoration: BoxDecoration(color: widget.style.backgroundColor),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: Container(
+                      width: canvasSize.width,
+                      height: canvasSize.height,
+                      child: CustomPaint(
+                        painter: MindMapPainter(_rootNode, widget.style),
+                        child: Stack(children: _buildAllNodes(_rootNode)),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             )
             : Container(
               width: _actualCanvasSize.width,
               height: _actualCanvasSize.height,
-              color: widget.style.backgroundColor,
-              child: CustomPaint(
-                painter: MindMapPainter(_rootNode, widget.style),
-                child: Stack(children: _buildAllNodes(_rootNode)),
+              decoration: BoxDecoration(color: widget.style.backgroundColor),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: Container(
+                    width: _actualCanvasSize.width,
+                    height: _actualCanvasSize.height,
+                    child: CustomPaint(
+                      painter: MindMapPainter(_rootNode, widget.style),
+                      child: Stack(children: _buildAllNodes(_rootNode)),
+                    ),
+                  ),
+                ),
               ),
             );
 
@@ -1599,13 +1632,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
         child: mindMapContent,
       );
     } else {
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: mindMapContent,
-        ),
-      );
+      return mindMapContent;
     }
   }
 
@@ -1639,34 +1666,52 @@ class _MindMapWidgetState extends State<MindMapWidget>
       customTextStyle: node.textStyle,
     );
 
+    // 노드 위치 계산 (화면 경계 내로 제한)
+    final nodeLeft = node.position.dx - actualSize.width / 2;
+    final nodeTop = node.position.dy - actualSize.height / 2;
+
+    // 화면 경계 체크 (캔버스 크기 기준) - 더 엄격한 제한
+    final maxLeft = _actualCanvasSize.width - actualSize.width;
+    final maxTop = _actualCanvasSize.height - actualSize.height;
+
+    final constrainedLeft = nodeLeft.clamp(
+      0.0,
+      math.max(0.0, maxLeft).toDouble(),
+    );
+    final constrainedTop = nodeTop.clamp(0.0, math.max(0.0, maxTop).toDouble());
+
     // 스타일의 노드 빌더가 있으면 우선 사용
     if (widget.style.nodeBuilder != null) {
       return Positioned(
         key: ValueKey('positioned_${node.id}'),
-        left: node.position.dx - actualSize.width / 2,
-        top: node.position.dy - actualSize.height / 2,
-        child: widget.style.nodeBuilder!(
-          node,
-          isSelected,
-          () {
-            if (node.hasChildren) {
-              _toggleNode(node);
-            } else {
-              _selectNode(node);
-            }
-          },
-          () {
-            final originalData = _findOriginalData(node.id);
-            if (originalData != null) {
-              widget.onNodeLongPress?.call(originalData);
-            }
-          },
-          () {
-            final originalData = _findOriginalData(node.id);
-            if (originalData != null) {
-              widget.onNodeDoubleTap?.call(originalData);
-            }
-          },
+        left: constrainedLeft,
+        top: constrainedTop,
+        child: SizedBox(
+          width: actualSize.width,
+          height: actualSize.height,
+          child: widget.style.nodeBuilder!(
+            node,
+            isSelected,
+            () {
+              if (node.hasChildren) {
+                _toggleNode(node);
+              } else {
+                _selectNode(node);
+              }
+            },
+            () {
+              final originalData = _findOriginalData(node.id);
+              if (originalData != null) {
+                widget.onNodeLongPress?.call(originalData);
+              }
+            },
+            () {
+              final originalData = _findOriginalData(node.id);
+              if (originalData != null) {
+                widget.onNodeDoubleTap?.call(originalData);
+              }
+            },
+          ),
         ),
       );
     }
@@ -1675,30 +1720,34 @@ class _MindMapWidgetState extends State<MindMapWidget>
     if (widget.customNodeBuilder != null) {
       return Positioned(
         key: ValueKey('positioned_${node.id}'),
-        left: node.position.dx - actualSize.width / 2,
-        top: node.position.dy - actualSize.height / 2,
-        child: widget.customNodeBuilder!(
-          node,
-          isSelected,
-          () {
-            if (node.hasChildren) {
-              _toggleNode(node);
-            } else {
-              _selectNode(node);
-            }
-          },
-          () {
-            final originalData = _findOriginalData(node.id);
-            if (originalData != null) {
-              widget.onNodeLongPress?.call(originalData);
-            }
-          },
-          () {
-            final originalData = _findOriginalData(node.id);
-            if (originalData != null) {
-              widget.onNodeDoubleTap?.call(originalData);
-            }
-          },
+        left: constrainedLeft,
+        top: constrainedTop,
+        child: SizedBox(
+          width: actualSize.width,
+          height: actualSize.height,
+          child: widget.customNodeBuilder!(
+            node,
+            isSelected,
+            () {
+              if (node.hasChildren) {
+                _toggleNode(node);
+              } else {
+                _selectNode(node);
+              }
+            },
+            () {
+              final originalData = _findOriginalData(node.id);
+              if (originalData != null) {
+                widget.onNodeLongPress?.call(originalData);
+              }
+            },
+            () {
+              final originalData = _findOriginalData(node.id);
+              if (originalData != null) {
+                widget.onNodeDoubleTap?.call(originalData);
+              }
+            },
+          ),
         ),
       );
     }
@@ -1713,8 +1762,8 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
     return Positioned(
       key: ValueKey('positioned_${node.id}'),
-      left: node.position.dx - actualSize.width / 2,
-      top: node.position.dy - actualSize.height / 2,
+      left: constrainedLeft,
+      top: constrainedTop,
       child: GestureDetector(
         onTap: () {
           if (node.hasChildren) {
@@ -1735,56 +1784,62 @@ class _MindMapWidgetState extends State<MindMapWidget>
             widget.onNodeDoubleTap?.call(originalData);
           }
         },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        child: SizedBox(
           width: actualSize.width,
           height: actualSize.height,
-          child: CustomPaint(
-            painter: _NodeWidgetPainter(
-              shape: widget.style.nodeShape,
-              fillColor: nodeColor,
-              borderColor: borderColor,
-              borderWidth: isSelected ? widget.style.selectionBorderWidth : 2.0,
-              shadowEnabled: widget.style.enableNodeShadow,
-              shadowColor: widget.style.nodeShadowColor,
-              shadowBlurRadius: widget.style.nodeShadowBlurRadius,
-              shadowSpreadRadius: widget.style.nodeShadowSpreadRadius,
-              shadowOffset: widget.style.nodeShadowOffset,
-            ),
-            child: Stack(
-              children: [
-                Center(
-                  child: Padding(
-                    padding: widget.style.textPadding,
-                    child: Text(
-                      node.title,
-                      textAlign: TextAlign.center,
-                      style: (node.textStyle ?? widget.style.defaultTextStyle)
-                          .copyWith(color: textColor, fontSize: textSize),
-                      maxLines: null,
-                      softWrap: true,
-                    ),
-                  ),
-                ),
-                if (node.hasChildren)
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        node.isExpanded ? Icons.remove : Icons.add,
-                        size: 12,
-                        color: nodeColor,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: actualSize.width,
+            height: actualSize.height,
+            child: CustomPaint(
+              painter: _NodeWidgetPainter(
+                shape: widget.style.nodeShape,
+                fillColor: nodeColor,
+                borderColor: borderColor,
+                borderWidth:
+                    isSelected ? widget.style.selectionBorderWidth : 2.0,
+                shadowEnabled: widget.style.enableNodeShadow,
+                shadowColor: widget.style.nodeShadowColor,
+                shadowBlurRadius: widget.style.nodeShadowBlurRadius,
+                shadowSpreadRadius: widget.style.nodeShadowSpreadRadius,
+                shadowOffset: widget.style.nodeShadowOffset,
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                    child: Padding(
+                      padding: widget.style.textPadding,
+                      child: Text(
+                        node.title,
+                        textAlign: TextAlign.center,
+                        style: (node.textStyle ?? widget.style.defaultTextStyle)
+                            .copyWith(color: textColor, fontSize: textSize),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
                       ),
                     ),
                   ),
-              ],
+                  if (node.hasChildren)
+                    Positioned(
+                      right: 4,
+                      top: 4,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          node.isExpanded ? Icons.remove : Icons.add,
+                          size: 12,
+                          color: nodeColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
