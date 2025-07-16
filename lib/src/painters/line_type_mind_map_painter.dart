@@ -104,35 +104,35 @@ class LineTypeMindMapPainter extends CustomPainter {
     }
   }
 
-  Path _createCurvePath(Offset start, Offset end, double angle) {
-    final path = Path();
-    path.moveTo(start.dx, start.dy);
+  // Path _createCurvePath(Offset start, Offset end, double angle) {
+  //   final path = Path();
+  //   path.moveTo(start.dx, start.dy);
 
-    if (style.useCustomCurve) {
-      final controlDistance = 60.0;
-      final controlPoint1 = Offset(
-        start.dx + math.cos(angle) * controlDistance * 0.5,
-        start.dy + math.sin(angle) * controlDistance * 0.5,
-      );
-      final controlPoint2 = Offset(
-        end.dx - math.cos(angle) * controlDistance * 0.3,
-        end.dy - math.sin(angle) * controlDistance * 0.3,
-      );
+  //   if (style.useCustomCurve) {
+  //     final controlDistance = 60.0;
+  //     final controlPoint1 = Offset(
+  //       start.dx + math.cos(angle) * controlDistance * 0.5,
+  //       start.dy + math.sin(angle) * controlDistance * 0.5,
+  //     );
+  //     final controlPoint2 = Offset(
+  //       end.dx - math.cos(angle) * controlDistance * 0.3,
+  //       end.dy - math.sin(angle) * controlDistance * 0.3,
+  //     );
 
-      path.cubicTo(
-        controlPoint1.dx,
-        controlPoint1.dy,
-        controlPoint2.dx,
-        controlPoint2.dy,
-        end.dx,
-        end.dy,
-      );
-    } else {
-      path.lineTo(end.dx, end.dy);
-    }
+  //     path.cubicTo(
+  //       controlPoint1.dx,
+  //       controlPoint1.dy,
+  //       controlPoint2.dx,
+  //       controlPoint2.dy,
+  //       end.dx,
+  //       end.dy,
+  //     );
+  //   } else {
+  //     path.lineTo(end.dx, end.dy);
+  //   }
 
-    return path;
-  }
+  //   return path;
+  // }
 
   void _drawMarkmapText(
     Canvas canvas,

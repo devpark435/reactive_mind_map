@@ -689,7 +689,7 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 Text('ID: ${node.id}'),
                 const SizedBox(height: 8),
-                Text('설명: ${node.description ?? '없음'}'),
+                Text('설명: ${node.description}'),
                 const SizedBox(height: 8),
                 Text('자식 수: ${node.children.length}'),
               ],
