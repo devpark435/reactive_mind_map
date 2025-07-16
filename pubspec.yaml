@@ -17,7 +17,7 @@ description: A customizable and interactive mind map widget for Flutter with smo
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
 
-version: 1.2.1
+version: 1.2.2
 
 homepage: https://github.com/devpark435/reactive_mind_map
 repository: https://github.com/devpark435/reactive_mind_map
