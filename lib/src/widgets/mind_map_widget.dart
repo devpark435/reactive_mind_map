@@ -69,16 +69,6 @@ class MindMapWidget extends StatefulWidget {
   /// 노드 확장 시 카메라 동작 / Camera behavior when expanding nodes
   final NodeExpandCameraBehavior nodeExpandCameraBehavior;
 
-  /// 커스텀 노드 빌더 / Custom node builder
-  final Widget Function(
-    MindMapNode node,
-    bool isSelected,
-    VoidCallback onTap,
-    VoidCallback onLongPress,
-    VoidCallback onDoubleTap,
-  )?
-  customNodeBuilder;
-
   const MindMapWidget({
     super.key,
     required this.data,
@@ -99,7 +89,6 @@ class MindMapWidget extends StatefulWidget {
     this.focusAnimation = const Duration(milliseconds: 300),
     this.focusMargin = const EdgeInsets.all(20),
     this.nodeExpandCameraBehavior = NodeExpandCameraBehavior.none,
-    this.customNodeBuilder,
   });
 
   @override
@@ -1717,7 +1706,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
     }
 
     // 커스텀 노드 빌더가 있으면 사용
-    if (widget.customNodeBuilder != null) {
+    if (widget.style.nodeBuilder != null) {
       return Positioned(
         key: ValueKey('positioned_${node.id}'),
         left: constrainedLeft,
@@ -1725,7 +1714,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
         child: SizedBox(
           width: actualSize.width,
           height: actualSize.height,
-          child: widget.customNodeBuilder!(
+          child: widget.style.nodeBuilder!(
             node,
             isSelected,
             () {

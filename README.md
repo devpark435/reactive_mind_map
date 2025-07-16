@@ -161,6 +161,71 @@ Widget build(BuildContext context) {
 
 ## Advanced Usage / 고급 사용법
 
+### Custom Node Builders / 커스텀 노드 빌더 🆕
+
+You can create custom node designs using the `nodeBuilder` property in `MindMapStyle`:
+`MindMapStyle`의 `nodeBuilder` 속성을 사용하여 커스텀 노드 디자인을 만들 수 있습니다:
+
+#### 1. Style-Level Custom Node Builder / 스타일 레벨 커스텀 노드 빌더
+
+Use the `nodeBuilder` property in `MindMapStyle`:
+`MindMapStyle`의 `nodeBuilder` 속성을 사용합니다:
+
+```dart
+MindMapWidget(
+  data: myData,
+  style: MindMapStyle(
+    layout: MindMapLayout.right,
+    nodeShape: NodeShape.roundedRectangle,
+    nodeBuilder: (node, isSelected, onTap, onLongPress, onDoubleTap) {
+      return GestureDetector(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        onDoubleTap: onDoubleTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: node.color,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected ? Colors.yellow : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          padding: EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                node.title,
+                style: TextStyle(
+                  color: node.textColor ?? Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (node.description != null) ...[
+                SizedBox(height: 4),
+                Text(
+                  node.description!,
+                  style: TextStyle(
+                    color: node.textColor?.withOpacity(0.8) ?? Colors.white70,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    },
+  ),
+  onNodeTap: (node) => print('Tapped: ${node.title}'),
+)
+```
+
+
+
 ### Camera Focus Control / 카메라 포커스 제어
 
 ```dart

@@ -16,7 +16,7 @@ description: A customizable and interactive mind map widget for Flutter with smo
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.1
+version: 1.3.0
 homepage: https://github.com/devpark435/reactive_mind_map
 repository: https://github.com/devpark435/reactive_mind_map
 issue_tracker: https://github.com/devpark435/reactive_mind_map/issues
