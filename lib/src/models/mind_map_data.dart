@@ -8,6 +8,9 @@ class MindMapData {
   /// 노드의 제목
   final String title;
 
+  /// Align text
+  final TextAlign textAlign;
+
   /// 노드의 상세 설명
   final String description;
 
@@ -39,6 +42,7 @@ class MindMapData {
     this.children = const [],
     this.color,
     this.textColor,
+    this.textAlign = TextAlign.center,
     this.borderColor,
     this.textStyle,
     this.size,
@@ -53,6 +57,7 @@ class MindMapData {
     List<MindMapData>? children,
     Color? color,
     Color? textColor,
+    TextAlign? textAlign,
     Color? borderColor,
     TextStyle? textStyle,
     Size? size,
@@ -65,6 +70,7 @@ class MindMapData {
       children: children ?? this.children,
       color: color ?? this.color,
       textColor: textColor ?? this.textColor,
+      textAlign: textAlign ?? this.textAlign,
       borderColor: borderColor ?? this.borderColor,
       textStyle: textStyle ?? this.textStyle,
       size: size ?? this.size,
@@ -83,6 +89,7 @@ class MindMapData {
         other.children == children &&
         other.color == color &&
         other.textColor == textColor &&
+        other.textAlign == textAlign &&
         other.borderColor == borderColor &&
         other.textStyle == textStyle &&
         other.size == size &&
@@ -98,6 +105,7 @@ class MindMapData {
       children,
       color,
       textColor,
+      textAlign,
       borderColor,
       textStyle,
       size,

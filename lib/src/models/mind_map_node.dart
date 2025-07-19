@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'mind_map_data.dart';
 
 /// 내부 처리용 마인드맵 노드 클래스
@@ -32,6 +33,9 @@ class MindMapNode {
 
   /// 테두리 색상
   Color? borderColor;
+
+  /// Aligning the text in each node, defualt to TextAlign.center
+  TextAlign? textAlign;
 
   /// 텍스트 스타일
   TextStyle? textStyle;
@@ -77,6 +81,7 @@ class MindMapNode {
     this.color = Colors.blue,
     this.textColor,
     this.borderColor,
+    this.textAlign,
     this.textStyle,
     this.size,
     this.isAnimating = false,
@@ -131,6 +136,7 @@ class MindMapNode {
       children: children,
       color: data.color ?? defaultNodeColors[level % defaultNodeColors.length],
       textColor: data.textColor,
+      textAlign: data.textAlign,
       borderColor: data.borderColor,
       textStyle: data.textStyle,
       size: data.size,
