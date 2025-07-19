@@ -1,13 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
-import '../models/mind_map_data.dart';
-import '../models/mind_map_style.dart';
-import '../models/mind_map_node.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../enums/camera_focus.dart';
 import '../enums/mind_map_layout.dart';
 import '../enums/node_shape.dart';
-import '../enums/camera_focus.dart';
+import '../models/mind_map_data.dart';
+import '../models/mind_map_node.dart';
+import '../models/mind_map_style.dart';
 // import '../enums/mind_map_type.dart';
 import '../painters/mind_map_painter.dart';
 import '../painters/node_painter.dart';
@@ -1577,7 +1578,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
                   scrollDirection: Axis.horizontal,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.vertical,
-                    child: Container(
+                    child: SizedBox(
                       width: canvasSize.width,
                       height: canvasSize.height,
                       child: CustomPaint(
@@ -1597,7 +1598,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
                 scrollDirection: Axis.horizontal,
                 child: SingleChildScrollView(
                   scrollDirection: Axis.vertical,
-                  child: Container(
+                  child: SizedBox(
                     width: _actualCanvasSize.width,
                     height: _actualCanvasSize.height,
                     child: CustomPaint(
@@ -1800,7 +1801,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
                       padding: widget.style.textPadding,
                       child: Text(
                         node.title,
-                        textAlign: TextAlign.center,
+                        textAlign: node.textAlign,
                         style: (node.textStyle ?? widget.style.defaultTextStyle)
                             .copyWith(color: textColor, fontSize: textSize),
                         maxLines: 3,
