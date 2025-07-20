@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reactive_mind_map/reactive_mind_map.dart';
+
 import 'src/models/mind_map_node.dart';
 
 void main() {
