@@ -94,6 +94,9 @@ class _TestScreenState extends State<TestScreen> {
                   '🍃 첫리프',
                   () => _focusToNode(CameraFocus.firstLeaf, null),
                 ),
+                // Forward/Backward focus buttons
+                _buildButton('⬅️ 이전', _focusPreviousNode),
+                _buildButton('다음 ➡️', _focusNextNode),
               ],
             ),
           ),
@@ -171,7 +174,7 @@ class _TestScreenState extends State<TestScreen> {
                     levelSpacing: 120,
                     nodeMargin: 15,
                   ),
-                  cameraFocus: CameraFocus.fitAll,
+                  cameraFocus: currentFocus,
                   focusNodeId: targetNodeId,
                   focusAnimation: const Duration(
                     milliseconds: 1000,
@@ -255,5 +258,32 @@ class _TestScreenState extends State<TestScreen> {
       case NodeExpandCameraBehavior.fitExpandedSubtree:
         return '🌳 전체트리';
     }
+  }
+
+  void _focusNextNode() {
+    final flatNodes = mindMapData.flatten();
+    if (flatNodes.isEmpty) return;
+    int currentIdx = flatNodes.indexWhere((n) => n.id == targetNodeId);
+    int nextIdx = (currentIdx + 1) % flatNodes.length;
+    final nextNode = flatNodes[nextIdx];
+    setState(() {
+      currentFocus = CameraFocus.custom;
+      targetNodeId = nextNode.id;
+      lastAction = '다음 노드로 이동: ${nextNode.title}';
+    });
+  }
+
+  void _focusPreviousNode() {
+    final flatNodes = mindMapData.flatten();
+    if (flatNodes.isEmpty) return;
+    int currentIdx = flatNodes.indexWhere((n) => n.id == targetNodeId);
+    int prevIdx = (currentIdx - 1);
+    if (prevIdx < 0) prevIdx = flatNodes.length - 1;
+    final prevNode = flatNodes[prevIdx];
+    setState(() {
+      currentFocus = CameraFocus.custom;
+      targetNodeId = prevNode.id;
+      lastAction = '이전 노드로 이동: ${prevNode.title}';
+    });
   }
 }
