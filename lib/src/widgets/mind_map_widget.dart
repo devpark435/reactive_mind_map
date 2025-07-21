@@ -1749,10 +1749,9 @@ class _MindMapWidgetState extends State<MindMapWidget>
     final nodeColor = node.color;
     final textColor = node.textColor ?? widget.style.defaultTextStyle.color;
     final borderColor =
-        node.borderColor ??
-        ((isFocused || isSelected)
+        (isFocused || isSelected)
             ? widget.style.selectionBorderColor
-            : Colors.white);
+            : (node.borderColor ?? Colors.white);
     final borderWidth =
         (isFocused || isSelected) ? widget.style.selectionBorderWidth : 2.0;
 

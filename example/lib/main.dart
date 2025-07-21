@@ -39,8 +39,9 @@ class _TestScreenState extends State<TestScreen> {
       MindMapData(
         id: 'node1',
         title: '📝 노드1',
+        borderColor: Colors.green,
         children: [
-          MindMapData(id: 'sub1', title: '서브1'),
+          MindMapData(id: 'sub1', title: '서브1', borderColor: Colors.purple),
           MindMapData(id: 'sub2', title: '서브2'),
         ],
       ),
