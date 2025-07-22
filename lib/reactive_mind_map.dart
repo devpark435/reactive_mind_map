@@ -5,3 +5,4 @@ export 'src/enums/node_shape.dart';
 export 'src/enums/camera_focus.dart';
 export 'src/widgets/mind_map_widget.dart'
     show MindMapWidget, InteractiveViewerOptions;
+export 'src/widgets/mind_map_widget.dart';
