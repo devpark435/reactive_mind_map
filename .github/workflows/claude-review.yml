@@ -1,0 +1,36 @@
+name: Claude Code Review
+
+# 모든 PR이 열리거나 갱신될 때 Claude가 자동 코드리뷰.
+# 인증: 네 Claude 구독(Max/Pro) OAuth 토큰 → 추가 토큰 과금 없음(구독 한도 사용).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            이 PR의 변경분을 리뷰해줘. 우선순위:
+            1) 정확성 버그(로직 오류, 엣지케이스, null/에러 처리)
+            2) 보안 이슈
+            3) 명확한 개선(중복, 단순화, 성능)
+            저장소에 CLAUDE.md가 있으면 그 컨벤션을 따른다.
+            실제 문제에만 간결한 인라인 리뷰 코멘트를 남기고, 사소한 취향(nit)은 건너뛴다.
+            중대한 문제가 없으면 한 줄로 "특이사항 없음"이라고만 답한다.
+            한국어로 작성.
+          claude_args: |
+            --model claude-sonnet-4-6
+            --max-turns 15
+            # 더 강한 리뷰 원하면 위 모델을 claude-opus-4-8 로 바꿔라(구독 한도 더 소모).
