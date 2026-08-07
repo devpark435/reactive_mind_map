@@ -92,7 +92,7 @@ class MindMapWidget extends StatefulWidget {
   });
 
   @override
-  State<MindMapWidget> createState() => _MindMapWidgetState();
+  State<MindMapWidget> createState() => MindMapWidgetState();
 }
 
 /// 뷰어 옵션 설정 / Interactive viewer options
@@ -112,11 +112,11 @@ class InteractiveViewerOptions {
   });
 }
 
-class _MindMapWidgetState extends State<MindMapWidget>
+class MindMapWidgetState extends State<MindMapWidget>
     with TickerProviderStateMixin {
   // Controller to manage initial centering in InteractiveViewer
   late TransformationController _transformationController;
-  late MindMapNode _rootNode;
+  late MindMapNode rootNode;
   final List<AnimationController> _activeAnimations = [];
   String? _selectedNodeId;
 
@@ -184,13 +184,13 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
   /// 마인드맵 초기화 / Initialize mind map
   void _initializeMindMap() {
-    _rootNode = MindMapNode.fromData(
+    rootNode = MindMapNode.fromData(
       widget.data,
       0,
       defaultColors: widget.style.defaultNodeColors,
     );
     // apply default expansion/collapse to all nodes
-    _applyInitialExpansion(_rootNode);
+    _applyInitialExpansion(rootNode);
   }
 
   /// Recursively set each node's expanded state based on the isNodesCollapsed flag
@@ -211,23 +211,23 @@ class _MindMapWidgetState extends State<MindMapWidget>
       if (!_isTogglingNode) {
         _calculateRootPosition();
       }
-      _calculateSubtreeHeights(_rootNode);
-      _calculateSubtreeWidths(_rootNode);
-      _assignPositions(_rootNode, 0);
+      _calculateSubtreeHeights(rootNode);
+      _calculateSubtreeWidths(rootNode);
+      _assignPositions(rootNode, 0);
 
       if (widget.canvasSize == null) {
         final requiredSize = _calculateRequiredCanvasSize();
 
         if (_actualCanvasSize != requiredSize) {
           _actualCanvasSize = requiredSize;
-          _resetNodePositions(_rootNode);
+          _resetNodePositions(rootNode);
 
           if (!_isTogglingNode) {
             _calculateRootPosition();
           }
-          _calculateSubtreeHeights(_rootNode);
-          _calculateSubtreeWidths(_rootNode);
-          _assignPositions(_rootNode, 0);
+          _calculateSubtreeHeights(rootNode);
+          _calculateSubtreeWidths(rootNode);
+          _assignPositions(rootNode, 0);
         }
       }
 
@@ -246,7 +246,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
     if (visited.contains(node.id)) return;
     visited.add(node.id);
 
-    if (node != _rootNode) {
+    if (node != rootNode) {
       node.hasFixedPosition = false;
     }
 
@@ -257,7 +257,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
   /// 실제 필요한 캔버스 크기 계산 / Calculate required canvas size
   Size _calculateRequiredCanvasSize() {
-    final allNodes = _collectAllVisibleNodes(_rootNode);
+    final allNodes = _collectAllVisibleNodes(rootNode);
 
     if (allNodes.isEmpty) {
       return widget.minCanvasSize;
@@ -295,7 +295,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
     }
 
     // 축소된 노드들의 예상 경계도 고려
-    final collapsedNodes = _collectAllCollapsedNodes(_rootNode);
+    final collapsedNodes = _collectAllCollapsedNodes(rootNode);
     if (collapsedNodes.isNotEmpty) {
       final estimatedBounds = _estimateCollapsedNodesBounds(collapsedNodes);
       if (estimatedBounds != null) {
@@ -504,15 +504,15 @@ class _MindMapWidgetState extends State<MindMapWidget>
         break;
     }
 
-    _rootNode.position = _rootPosition;
-    _rootNode.targetPosition = _rootPosition;
-    _rootNode.hasFixedPosition = true;
+    rootNode.position = _rootPosition;
+    rootNode.targetPosition = _rootPosition;
+    rootNode.hasFixedPosition = true;
   }
 
   /// 기본 레이아웃으로 복원 / Reset to basic layout
   void _resetToBasicLayout() {
-    _rootNode.position = _rootPosition;
-    _rootNode.targetPosition = _rootPosition;
+    rootNode.position = _rootPosition;
+    rootNode.targetPosition = _rootPosition;
     if (mounted) {
       setState(() {});
     }
@@ -992,7 +992,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
   }
 
   /// 노드 토글 / Toggle node
-  void _toggleNode(MindMapNode node) {
+  void toggleNode(MindMapNode node) {
     if (node.children.isEmpty || !mounted) return;
 
     HapticFeedback.lightImpact();
@@ -1165,7 +1165,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
     final double scale = _transformationController.value.getMaxScaleOnAxis();
 
     // 타겟 노드 찾기
-    final targetNode = _findNodeById(_rootNode, nodeId);
+    final targetNode = _findNodeById(rootNode, nodeId);
     if (targetNode == null) return;
 
     final Offset targetPosition = targetNode.position;
@@ -1269,7 +1269,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
         break;
 
       case CameraFocus.firstLeaf:
-        final firstLeaf = _findFirstLeafNode(_rootNode);
+        final firstLeaf = _findFirstLeafNode(rootNode);
         if (firstLeaf != null) {
           targetPosition = firstLeaf.position;
         }
@@ -1277,7 +1277,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
 
       case CameraFocus.custom:
         if (widget.focusNodeId != null) {
-          final targetNode = _findNodeById(_rootNode, widget.focusNodeId!);
+          final targetNode = _findNodeById(rootNode, widget.focusNodeId!);
           if (targetNode != null) {
             targetPosition = targetNode.position;
           }
@@ -1311,7 +1311,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
   /// 모든 노드의 경계 계산 / Calculate bounds of all nodes
   Rect? _calculateAllNodesBounds() {
     final allNodes = <MindMapNode>[];
-    final allVisibleNodes = _collectAllVisibleNodes(_rootNode);
+    final allVisibleNodes = _collectAllVisibleNodes(rootNode);
     allNodes.addAll(allVisibleNodes);
 
     if (allNodes.isEmpty) return null;
@@ -1581,8 +1581,8 @@ class _MindMapWidgetState extends State<MindMapWidget>
                       width: canvasSize.width,
                       height: canvasSize.height,
                       child: CustomPaint(
-                        painter: MindMapPainter(_rootNode, widget.style),
-                        child: Stack(children: _buildAllNodes(_rootNode)),
+                        painter: MindMapPainter(rootNode, widget.style),
+                        child: Stack(children: _buildAllNodes(rootNode)),
                       ),
                     ),
                   ),
@@ -1601,8 +1601,8 @@ class _MindMapWidgetState extends State<MindMapWidget>
                     width: _actualCanvasSize.width,
                     height: _actualCanvasSize.height,
                     child: CustomPaint(
-                      painter: MindMapPainter(_rootNode, widget.style),
-                      child: Stack(children: _buildAllNodes(_rootNode)),
+                      painter: MindMapPainter(rootNode, widget.style),
+                      child: Stack(children: _buildAllNodes(rootNode)),
                     ),
                   ),
                 ),
@@ -1683,7 +1683,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
             isSelected,
             () {
               if (node.hasChildren) {
-                _toggleNode(node);
+                toggleNode(node);
               } else {
                 _selectNode(node);
               }
@@ -1719,7 +1719,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
             isSelected,
             () {
               if (node.hasChildren) {
-                _toggleNode(node);
+                toggleNode(node);
               } else {
                 _selectNode(node);
               }
@@ -1756,7 +1756,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
       child: GestureDetector(
         onTap: () {
           if (node.hasChildren) {
-            _toggleNode(node);
+            toggleNode(node);
           } else {
             _selectNode(node);
           }
