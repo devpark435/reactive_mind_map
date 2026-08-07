@@ -1,13 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
-import '../models/mind_map_data.dart';
-import '../models/mind_map_style.dart';
-import '../models/mind_map_node.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../enums/camera_focus.dart';
 import '../enums/mind_map_layout.dart';
 import '../enums/node_shape.dart';
-import '../enums/camera_focus.dart';
+import '../models/mind_map_data.dart';
+import '../models/mind_map_node.dart';
+import '../models/mind_map_style.dart';
 // import '../enums/mind_map_type.dart';
 import '../painters/mind_map_painter.dart';
 import '../painters/node_painter.dart';
@@ -1647,6 +1648,8 @@ class _MindMapWidgetState extends State<MindMapWidget>
   /// 개별 노드 위젯 빌드 / Build individual node widget
   Widget _buildNodeWidget(MindMapNode node) {
     final isSelected = _selectedNodeId == node.id;
+    final isFocused =
+        widget.focusNodeId != null && widget.focusNodeId == node.id;
 
     final actualSize = widget.style.getActualNodeSize(
       node.title,
@@ -1746,8 +1749,11 @@ class _MindMapWidgetState extends State<MindMapWidget>
     final nodeColor = node.color;
     final textColor = node.textColor ?? widget.style.defaultTextStyle.color;
     final borderColor =
-        node.borderColor ??
-        (isSelected ? widget.style.selectionBorderColor : Colors.white);
+        (isFocused || isSelected)
+            ? widget.style.selectionBorderColor
+            : (node.borderColor ?? Colors.white);
+    final borderWidth =
+        (isFocused || isSelected) ? widget.style.selectionBorderWidth : 2.0;
 
     return Positioned(
       key: ValueKey('positioned_${node.id}'),
@@ -1785,8 +1791,7 @@ class _MindMapWidgetState extends State<MindMapWidget>
                 shape: widget.style.nodeShape,
                 fillColor: nodeColor,
                 borderColor: borderColor,
-                borderWidth:
-                    isSelected ? widget.style.selectionBorderWidth : 2.0,
+                borderWidth: borderWidth,
                 shadowEnabled: widget.style.enableNodeShadow,
                 shadowColor: widget.style.nodeShadowColor,
                 shadowBlurRadius: widget.style.nodeShadowBlurRadius,

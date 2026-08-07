@@ -107,6 +107,15 @@ class MindMapData {
 
   @override
   String toString() {
-    return 'MindMapData(id: $id, title: $title, children: ${children.length})';
+    return 'MindMapData(id: $id, title: $title, children:  [36m${children.length} [0m)';
+  }
+
+  /// Returns a flat list of all nodes in pre-order traversal (self, then children)
+  List<MindMapData> flatten() {
+    List<MindMapData> result = [this];
+    for (final child in children) {
+      result.addAll(child.flatten());
+    }
+    return result;
   }
 }
